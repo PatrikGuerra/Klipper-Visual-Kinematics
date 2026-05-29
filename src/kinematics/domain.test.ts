@@ -5,6 +5,7 @@ import { generateConfig } from './configGenerator';
 import { getMotorReadout } from './transforms';
 import { safeHomeX, safeHomeY, validateState } from './validators';
 import { kinematicById } from './catalog';
+import { inputToScrew, screwReferenceOrigin, screwToInput } from './screwReference';
 
 const ids = ['cartesian', 'corexy', 'corexz', 'hybrid_corexy', 'hybrid_corexz', 'delta', 'deltesian', 'rotary_delta', 'polar', 'winch', 'generic_cartesian', 'none'];
 
@@ -45,6 +46,12 @@ describe('validators', () => {
     const kin = kinematicById(state.values.kinematics);
     expect(safeHomeX(state.values, kin)).toBe(140);
     expect(safeHomeY(state.values, kin)).toBe(133);
+  });
+
+  it('warns when screw_thread is outside official Klipper suggestions', () => {
+    const state = createDefaultState();
+    state.values.screw_thread = 'CUSTOM-M4';
+    expect(validateState(state).some((d) => d.type === 'warning' && d.field === 'screw_thread')).toBe(true);
   });
 });
 
@@ -110,6 +117,32 @@ describe('config generator', () => {
     state.values.bed_y_offset = -8;
     const cfg = generateConfig(state);
     expect(cfg).toContain('# visual_bed_offset: 12, -8');
+  });
+
+  it('omits screws_tilt_adjust when screws are disabled', () => {
+    const state = createDefaultState();
+    state.values.screwsEnabled = false;
+    const cfg = generateConfig(state);
+    expect(cfg).not.toContain('[screws_tilt_adjust]');
+  });
+
+  it('converts screw inputs from physical bed reference into Klipper nozzle coordinates', () => {
+    const state = createDefaultState();
+    state.values.bed_x = 250;
+    state.values.bed_y = 280;
+    state.values.bed_x_offset = 10;
+    state.values.bed_y_offset = 20;
+    state.values.plate_x = 300;
+    state.values.plate_y = 320;
+    state.values.screw_reference = 'physical_bed';
+    state.values.probe_x_offset = 5;
+    state.values.probe_y_offset = -3;
+    const screw = inputToScrew(30, 40, state.values);
+    state.screws = [{ ...screw, name: 'Front Left' }];
+
+    expect(screwReferenceOrigin(state.values)).toEqual({ x: -15, y: 0, label: 'Bed Physical Size' });
+    expect(screwToInput(state.screws[0], state.values)).toEqual({ x: 30, y: 40 });
+    expect(generateConfig(state)).toContain('screw1: 10.00, 43.00');
   });
 });
 

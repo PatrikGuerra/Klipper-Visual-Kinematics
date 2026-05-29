@@ -71,6 +71,8 @@ export const commonDefaults: Record<string, FieldValue> = {
   mesh_county: 6,
   mesh_speed: 120,
   mesh_hz: 5,
+  screwsEnabled: true,
+  screw_reference: 'usable_bed',
   screw_thread: 'CW-M4'
 };
 

@@ -114,9 +114,9 @@ export default function App() {
         style={`--kinematics-panel-width: ${kinematicsWidth()}px; --macros-panel-width: ${macrosWidth()}px; --printer-cfg-panel-width: ${printerCfgWidth()}px;`}
       >
         <aside classList={{ collapsed: appState.ui.kinematicsPanelCollapsed }} class="vertical-panel kinematics-vertical-panel">
-          <div class="vertical-panel-header">
-            <button type="button" class="vertical-panel-title-button" aria-expanded={!appState.ui.kinematicsPanelCollapsed} onClick={() => togglePanel('kinematics')}>Kinematics</button>
-          </div>
+          <button type="button" class="vertical-panel-header" aria-expanded={!appState.ui.kinematicsPanelCollapsed} onClick={() => togglePanel('kinematics')}>
+            <span class="vertical-panel-title-button">Kinematics</span>
+          </button>
           {appState.ui.kinematicsPanelCollapsed ? (
             <button type="button" class="panel-rail-button" onClick={() => togglePanel('kinematics')}>Kinematics</button>
           ) : (
@@ -128,9 +128,9 @@ export default function App() {
         </aside>
 
         <aside classList={{ collapsed: appState.ui.macrosPanelCollapsed }} class="vertical-panel macros-vertical-panel">
-          <div class="vertical-panel-header">
-            <button type="button" class="vertical-panel-title-button" aria-expanded={!appState.ui.macrosPanelCollapsed} onClick={() => togglePanel('macros')}>Macro Editor</button>
-          </div>
+          <button type="button" class="vertical-panel-header" aria-expanded={!appState.ui.macrosPanelCollapsed} onClick={() => togglePanel('macros')}>
+            <span class="vertical-panel-title-button">Macro Editor</span>
+          </button>
           {appState.ui.macrosPanelCollapsed ? (
             <button type="button" class="panel-rail-button" onClick={() => togglePanel('macros')}>Macro Editor</button>
           ) : (
@@ -142,9 +142,9 @@ export default function App() {
         </aside>
 
         <aside classList={{ collapsed: appState.ui.printerCfgPanelCollapsed }} class="vertical-panel printer-cfg-vertical-panel">
-          <div class="vertical-panel-header">
-            <button type="button" class="vertical-panel-title-button" aria-expanded={!appState.ui.printerCfgPanelCollapsed} onClick={() => togglePanel('printerCfg')}>printer.cfg</button>
-          </div>
+          <button type="button" class="vertical-panel-header" aria-expanded={!appState.ui.printerCfgPanelCollapsed} onClick={() => togglePanel('printerCfg')}>
+            <span class="vertical-panel-title-button">printer.cfg</span>
+          </button>
           {appState.ui.printerCfgPanelCollapsed ? (
             <button type="button" class="panel-rail-button" onClick={() => togglePanel('printerCfg')}>printer.cfg</button>
           ) : (

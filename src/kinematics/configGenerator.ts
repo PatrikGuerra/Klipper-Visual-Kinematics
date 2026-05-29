@@ -8,7 +8,8 @@ export function generateConfig(state: AppState): string {
   const kin = kinematicById(state.values.kinematics);
   const sections = [header(kin, state), printerSection(kin, state), stepperSections(kin, state)];
   if (kin.supportsProbeFeatures && state.values.probeFeaturesEnabled) {
-    sections.push(probeSections(state), safeZHomeSection(state, kin), bedMeshSection(state), screwsTiltSection(state));
+    sections.push(probeSections(state), safeZHomeSection(state, kin), bedMeshSection(state));
+    if (state.values.screwsEnabled) sections.push(screwsTiltSection(state));
   }
   if (state.values.extruderEnabled) sections.push(extruderSection(state));
   sections.push(summarySection(kin, state));
@@ -236,11 +237,12 @@ function bedMeshSection(state: AppState): string {
 
 function screwsTiltSection(state: AppState): string {
   const v = state.values;
-  const lines = ['[screws_tilt_adjust]', '# Physical screw positions converted to nozzle positions using probe offsets.'];
+  const lines = ['[screws_tilt_adjust]', '# Screws are stored as physical machine coordinates; screwN values are nozzle positions after probe offsets.'];
   state.screws.forEach((s, index) => {
     const n = index + 1;
+    lines.push(`# screw${n} physical: X${fmt(s.x)} Y${fmt(s.y)}`);
     lines.push(`screw${n}: ${fmt(s.x - num(v.probe_x_offset))}, ${fmt(s.y - num(v.probe_y_offset))}`);
-    lines.push(`screw${n}_name: ${s.name} (screw at ${s.x},${s.y})`);
+    lines.push(`screw${n}_name: ${s.name}`);
   });
   lines.push('horizontal_move_z: 10', `speed: ${v.homing_speed_x}`, `screw_thread: ${v.screw_thread}`);
   return lines.join('\n');

@@ -15,10 +15,12 @@ export function drawProbeFeatures(draw: DrawContext): void {
       point(ctx, map, x, y, 2.8, '#4bd08b');
     }
   }
-  state.screws.forEach((s, index) => {
-    point(ctx, map, s.x, s.y, 6, '#c18cff', 'rgba(193,140,255,0.2)');
-    worldLabel(ctx, map, String(index + 1), s.x + 7, s.y + 5, '#c18cff');
-  });
+  if (state.values.screwsEnabled) {
+    state.screws.forEach((s, index) => {
+      point(ctx, map, s.x, s.y, 6, '#c18cff', 'rgba(193,140,255,0.2)');
+      worldLabel(ctx, map, String(index + 1), s.x + 7, s.y + 5, '#c18cff');
+    });
+  }
 }
 
 export function drawRadialProbeFeatures(draw: DrawContext): void {

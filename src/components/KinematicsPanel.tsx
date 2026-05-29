@@ -3,6 +3,9 @@ import { Plus, RotateCcw, Search, X } from 'lucide-solid';
 import { commonFieldGroups } from '../kinematics/fields';
 import { kinematicsCatalog, kinematicById } from '../kinematics/catalog';
 import { geometryLayout, kinematicLayouts, probeLayout } from '../kinematics/fieldLayouts';
+import { num } from '../kinematics/math';
+import { normalizeScrewReference, screwReferenceOptions } from '../kinematics/screwReference';
+import { normalizeScrewThread, screwThreadOptions } from '../kinematics/screwThreads';
 import { resetState, setValue, updateMutable } from '../store';
 import DynamicList from './DynamicList';
 import FieldGroup from './FieldGroup';
@@ -64,7 +67,9 @@ const fieldAliases: Record<string, string[]> = {
   mesh_county: ['[bed_mesh]', 'probe_count', 'probe_count y'],
   mesh_speed: ['[bed_mesh]', 'speed'],
   mesh_hz: ['[bed_mesh]', 'horizontal_move_z'],
-  screw_thread: ['[screws_tilt_adjust]', 'screw_thread'],
+  screwsEnabled: ['[screws_tilt_adjust]', 'enable screws', 'screws enabled'],
+  screw_reference: ['[screws_tilt_adjust]', 'input reference', 'usable bed', 'bed physical size'],
+  screw_thread: ['[screws_tilt_adjust]', 'screw_thread', 'CW-M3', 'CCW-M3', 'CW-M4', 'CCW-M4', 'CW-M5', 'CCW-M5'],
   delta_radius: ['[printer]', 'delta_radius'],
   print_radius: ['[printer]', 'print_radius'],
   delta_calibrate_radius: ['[delta_calibrate]', 'radius'],
@@ -89,6 +94,9 @@ export default function KinematicsPanel(props: KinematicsPanelProps) {
   const kinematicFields = createMemo(() => filterFields(kin().fields));
 
   const screwMatchCount = createMemo(() => matchingFieldCount(props.state.screws, () => [['X', 'screw_x'], ['Y', 'screw_y'], ['Name', 'screw_name']]));
+  const screwsEnabledMatches = createMemo(() => matchesText('Enable', 'screwsEnabled', '[screws_tilt_adjust]', 'enable screws'));
+  const screwReferenceMatches = createMemo(() => matchesText('Input reference', 'screw_reference', 'usable bed', 'bed physical size', 'physical plate'));
+  const screwReferenceOption = createMemo(() => screwReferenceOptions.find((option) => option.id === normalizeScrewReference(props.state.values.screw_reference)) ?? screwReferenceOptions[0]);
   const winchMatchCount = createMemo(() => matchingFieldCount(props.state.winches, () => [['Name', 'winch_name'], ['Anchor X', 'anchor_x'], ['Anchor Y', 'anchor_y'], ['Anchor Z', 'anchor_z'], ['Rot dist', 'rotation_distance']]));
   const carriageMatchCount = createMemo(() => matchingFieldCount(props.state.carriages, () => [['Name', 'carriage_name'], ['Axis', 'axis'], ['Min', 'position_min'], ['Max', 'position_max'], ['Endstop', 'position_endstop']]));
   const genericStepperMatchCount = createMemo(() => matchingFieldCount(props.state.genericSteppers, () => [['Name', 'stepper_name'], ['Carriages', 'carriages'], ['Equation', 'equation']]));
@@ -97,7 +105,7 @@ export default function KinematicsPanel(props: KinematicsPanelProps) {
   const showGeometry = createMemo(() => shouldShowSection(geometryFields()));
   const showStepper = createMemo(() => shouldShowSection(stepperFields()));
   const showExtruder = createMemo(() => shouldShowSection(extruderFields()));
-  const showScrews = createMemo(() => !searchTerm() || screwFields().length > 0 || screwMatchCount() > 0);
+  const showScrews = createMemo(() => !searchTerm() || screwFields().length > 0 || screwsEnabledMatches() || screwReferenceMatches() || screwMatchCount() > 0);
   const showProbe = createMemo(() => !searchTerm() || probeFields().length > 0);
   const showWinches = createMemo(() => !searchTerm() || winchMatchCount() > 0);
   const showCarriages = createMemo(() => !searchTerm() || carriageMatchCount() > 0);
@@ -106,7 +114,7 @@ export default function KinematicsPanel(props: KinematicsPanelProps) {
     () => !searchTerm() || kinematicFields().length > 0 || (kin().id === 'winch' && winchMatchCount() > 0) || (kin().id === 'generic_cartesian' && (carriageMatchCount() > 0 || genericStepperMatchCount() > 0))
   );
   const matchCount = createMemo(
-    () => commonFields().length + geometryFields().length + stepperFields().length + extruderFields().length + probeFields().length + screwFields().length + kinematicFields().length + (searchTerm() ? screwMatchCount() + winchMatchCount() + carriageMatchCount() + genericStepperMatchCount() : 0)
+    () => commonFields().length + geometryFields().length + stepperFields().length + extruderFields().length + probeFields().length + screwFields().length + kinematicFields().length + (searchTerm() ? (screwsEnabledMatches() ? 1 : 0) + (screwReferenceMatches() ? 1 : 0) + screwMatchCount() + winchMatchCount() + carriageMatchCount() + genericStepperMatchCount() : 0)
   );
 
   function normalize(value: unknown): string {
@@ -143,9 +151,27 @@ export default function KinematicsPanel(props: KinematicsPanelProps) {
     return filteredFields.length > 0;
   }
 
+  function fieldClass(id: string): string {
+    const issues = props.diagnostics.filter((diagnostic) => diagnostic.field === id);
+    if (issues.some((diagnostic) => diagnostic.type === 'error')) return 'field-error';
+    if (issues.some((diagnostic) => diagnostic.type === 'warning')) return 'field-warning';
+    return '';
+  }
+
+  function titleFor(id: string): string {
+    return props.diagnostics
+      .filter((diagnostic) => diagnostic.field === id)
+      .map((diagnostic) => diagnostic.message)
+      .join('\n');
+  }
+
   function addScrew(): void {
     updateMutable((draft) => {
-      draft.screws.push({ x: Number(draft.values.bed_x) / 2, y: Number(draft.values.bed_y) / 2, name: `Screw ${draft.screws.length + 1}` });
+      draft.screws.push({
+        x: num(draft.values.bed_x_offset) + num(draft.values.bed_x) / 2,
+        y: num(draft.values.bed_y_offset) + num(draft.values.bed_y) / 2,
+        name: `Screw ${draft.screws.length + 1}`
+      });
     });
   }
 
@@ -171,6 +197,18 @@ export default function KinematicsPanel(props: KinematicsPanelProps) {
 
   return (
     <aside class="sidebar">
+      <section class="panel config-search-panel">
+        <div class="panel-title"><span>Search config fields</span></div>
+        <div class="config-search">
+          <div class="search-input-row">
+            <Search size={15} />
+            <input id="config-search" type="text" placeholder="mesh, probe, velocity, stepper..." value={configSearch()} onInput={(event) => setConfigSearch(event.currentTarget.value)} />
+            <Show when={configSearch()}><button type="button" class="ghost search-clear" aria-label="Clear config search" onClick={() => setConfigSearch('')}><X size={14} /></button></Show>
+          </div>
+          <Show when={searchTerm()}><p class="help">{matchCount()} matching config item(s)</p></Show>
+        </div>
+      </section>
+
       <section class="panel">
         <div class="panel-title">
           <span>Kinematics</span>
@@ -181,15 +219,6 @@ export default function KinematicsPanel(props: KinematicsPanelProps) {
           <For each={kinematicsCatalog}>{(option) => <option value={option.id}>{option.name} ({option.id})</option>}</For>
         </select>
         <p class="help">{kin().note}</p>
-        <div class="config-search">
-          <label for="config-search">Search config fields</label>
-          <div class="search-input-row">
-            <Search size={15} />
-            <input id="config-search" type="text" placeholder="mesh, probe, velocity, stepper..." value={configSearch()} onInput={(event) => setConfigSearch(event.currentTarget.value)} />
-            <Show when={configSearch()}><button type="button" class="ghost search-clear" aria-label="Clear config search" onClick={() => setConfigSearch('')}><X size={14} /></button></Show>
-          </div>
-          <Show when={searchTerm()}><p class="help">{matchCount()} matching config item(s)</p></Show>
-        </div>
       </section>
 
       <Show when={showCommon()}><section class="panel"><div class="panel-title"><span>Common Motion</span></div><FieldGroup fields={commonFields()} state={props.state} diagnostics={props.diagnostics} emptyMessage="No matching config fields in this block." /></section></Show>
@@ -208,13 +237,44 @@ export default function KinematicsPanel(props: KinematicsPanelProps) {
 
       <Show when={showScrews()}>
         <section class="panel">
-          <div class="panel-title"><span>Screws</span><Show when={!searchTerm()}><button type="button" class="success" onClick={addScrew}><Plus size={14} />Add</button></Show></div>
-          <div classList={{ 'disabled-block': !kin().supportsProbeFeatures || !props.state.values.probeFeaturesEnabled }}>
+          <div class="panel-title">
+            <span>Screws</span>
+            <label class="toggle">
+              <input type="checkbox" checked={!!props.state.values.screwsEnabled} disabled={!kin().supportsProbeFeatures || !props.state.values.probeFeaturesEnabled} onChange={(event) => setValue('screwsEnabled', event.currentTarget.checked)} />
+              <span>Enable</span>
+            </label>
+            <Show when={!searchTerm()}><button type="button" class="success" onClick={addScrew}><Plus size={14} />Add</button></Show>
+          </div>
+          <div classList={{ 'disabled-block': !kin().supportsProbeFeatures || !props.state.values.probeFeaturesEnabled || !props.state.values.screwsEnabled }}>
+            <Show when={!searchTerm() || screwReferenceMatches()}>
+              <div class="screw-reference-control">
+                <label for="screw-reference">Input reference</label>
+                <select id="screw-reference" value={normalizeScrewReference(props.state.values.screw_reference)} onChange={(event) => setValue('screw_reference', event.currentTarget.value)}>
+                  <For each={screwReferenceOptions}>{(option) => <option value={option.id}>{option.label}</option>}</For>
+                </select>
+                <p class="help">{screwReferenceOption().help} The generated .cfg is converted to Klipper nozzle/probe coordinates.</p>
+              </div>
+            </Show>
             <Show when={!searchTerm() || screwFields().length > 0}>
-              <FieldGroup fields={screwFields()} state={props.state} diagnostics={props.diagnostics} emptyMessage="No matching config fields in this block." />
+              <div class="screw-thread-control">
+                <label for="screw-thread">Screw thread</label>
+                <input
+                  id="screw-thread"
+                  class={fieldClass('screw_thread')}
+                  title={titleFor('screw_thread')}
+                  type="text"
+                  list="screw-thread-options"
+                  value={String(props.state.values.screw_thread ?? '')}
+                  onInput={(event) => setValue('screw_thread', normalizeScrewThread(event.currentTarget.value))}
+                />
+                <datalist id="screw-thread-options">
+                  <For each={screwThreadOptions}>{(option) => <option value={option}>{option}</option>}</For>
+                </datalist>
+                <p class="help">Official suggestions are M3/M4/M5 with CW or CCW knob direction. Custom values are allowed here but may require manual Klipper review.</p>
+              </div>
             </Show>
             <DynamicList state={props.state} type="screws" filterText={configSearch()} />
-            <p class="help">Generates [screws_tilt_adjust] positions using the current probe offset.</p>
+            <p class="help">When enabled, generates [screws_tilt_adjust] positions using the current probe offset.</p>
           </div>
         </section>
       </Show>

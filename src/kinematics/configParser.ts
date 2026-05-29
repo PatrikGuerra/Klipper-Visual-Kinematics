@@ -1,4 +1,5 @@
 import { isKinematicId } from './catalog';
+import { num } from './math';
 import { createMacroId } from '../macros/presets';
 import type { AppState, Diagnostic, FieldValue, MacroDefinition } from './types';
 
@@ -139,6 +140,7 @@ function applyKnownSection(section: ParsedSection, state: AppState, diagnostics:
   }
   if (name === 'screws_tilt_adjust') {
     state.values.probeFeaturesEnabled = true;
+    state.values.screwsEnabled = true;
     applyScrews(entries, state);
     return;
   }
@@ -249,7 +251,6 @@ function applyMacroSection(section: ParsedSection, state: AppState, diagnostics:
     id: existing?.id ?? createMacroId('macro'),
     name,
     description,
-    enabled: true,
     paramsText: params.join('\n'),
     gcode: gcode.join('\n').trim(),
     simulationStartMode: existing?.simulationStartMode ?? 'current',
@@ -304,8 +305,8 @@ function applyScrews(entries: Record<string, string>, state: AppState): void {
       const index = Number(key.replace('screw', ''));
       const parts = value.split(',').map((part) => Number(part.trim()));
       return {
-        x: Number.isFinite(parts[0]) ? parts[0] : 0,
-        y: Number.isFinite(parts[1]) ? parts[1] : 0,
+        x: Number.isFinite(parts[0]) ? parts[0] + num(state.values.probe_x_offset) : 0,
+        y: Number.isFinite(parts[1]) ? parts[1] + num(state.values.probe_y_offset) : 0,
         name: entries[`screw${index}_name`] ?? `Screw ${index}`
       };
     });

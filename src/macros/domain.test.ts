@@ -6,7 +6,7 @@ import { simulateMacro } from './simulator';
 import { validateMacros } from './validators';
 
 describe('macro config generator', () => {
-  it('generates enabled macros with normalized indentation', () => {
+  it('generates macros with normalized indentation', () => {
     const state = createDefaultState();
     state.macros = [
       {
@@ -20,6 +20,20 @@ describe('macro config generator', () => {
     expect(cfg).toContain('[gcode_macro CLEAN_NOZZLE]');
     expect(cfg).toContain('description: Clean nozzle');
     expect(cfg).toContain('  G90\n  G0 X10 Y20 F6000');
+  });
+
+  it('generates legacy disabled macros because all editor macros are exported', () => {
+    const state = createDefaultState();
+    state.macros = [
+      {
+        ...createBlankMacro(state.toolhead),
+        name: 'legacy_disabled',
+        gcode: 'G90',
+        enabled: false
+      } as unknown as ReturnType<typeof createBlankMacro>
+    ];
+
+    expect(generateMacrosConfig(state.macros)).toContain('[gcode_macro LEGACY_DISABLED]');
   });
 });
 
@@ -86,5 +100,12 @@ describe('macro validators', () => {
     const state = createDefaultState();
     state.macros = [createBlankMacro(state.toolhead, 1), createBlankMacro(state.toolhead, 1)];
     expect(validateMacros(state).some((item) => item.message.includes('duplicated'))).toBe(true);
+  });
+
+  it('validates empty gcode for every macro because all macros are exported', () => {
+    const state = createDefaultState();
+    state.macros = [{ ...createBlankMacro(state.toolhead), name: 'EMPTY_MACRO', gcode: '' }];
+
+    expect(validateMacros(state).some((item) => item.message.includes('empty gcode'))).toBe(true);
   });
 });

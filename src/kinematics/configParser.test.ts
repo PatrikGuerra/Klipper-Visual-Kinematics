@@ -30,6 +30,17 @@ describe('printer.cfg parser', () => {
     const macro = state.macros.find((item) => item.name === 'PURGE');
     expect(macro?.description).toBe('Purge filament');
     expect(macro?.gcode).toContain('G1 E8 F300');
+    expect('enabled' in (macro ?? {})).toBe(false);
+  });
+
+  it('reads screws_tilt_adjust nozzle coordinates back as physical screw positions', () => {
+    const state = createDefaultState();
+    state.values.probe_x_offset = 29;
+    state.values.probe_y_offset = -26;
+    applyConfigTextToState('[screws_tilt_adjust]\nscrew1: 1, 56\nscrew1_name: Front Left\nscrew_thread: CW-M4', state);
+    expect(state.screws[0]).toEqual({ x: 30, y: 30, name: 'Front Left' });
+    expect(state.values.screwsEnabled).toBe(true);
+    expect(state.values.screw_thread).toBe('CW-M4');
   });
 
   it('preserves unsupported sections as unmanaged config', () => {

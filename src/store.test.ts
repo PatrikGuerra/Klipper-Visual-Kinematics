@@ -74,4 +74,26 @@ describe('solid app store actions', () => {
     layers.probeOffset = true;
     expect(areDimensionLayersActive(layers)).toBe(true);
   });
+
+  it('ignores legacy macro enabled flags while loading stored state', () => {
+    const state = mergeStoredState({
+      values: { kinematics: 'cartesian' },
+      macros: [
+        {
+          id: 'legacy-disabled',
+          name: 'LEGACY_DISABLED',
+          description: '',
+          enabled: false,
+          gcode: 'G90',
+          paramsText: '',
+          simulationStartMode: 'current',
+          simulationStart: { x: 1, y: 2, z: 3 }
+        }
+      ],
+      activeMacroId: 'legacy-disabled'
+    });
+
+    expect(state.macros[0].name).toBe('LEGACY_DISABLED');
+    expect('enabled' in state.macros[0]).toBe(false);
+  });
 });

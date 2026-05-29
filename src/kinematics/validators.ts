@@ -1,6 +1,7 @@
 import { commonFieldGroups } from './fields';
 import { kinematicById } from './catalog';
 import { isFiniteNumber, isRadialFamily, num } from './math';
+import { isOfficialScrewThread, screwThreadOptions } from './screwThreads';
 import type { AppState, Diagnostic, KinematicDefinition } from './types';
 
 export function validateState(state: AppState): Diagnostic[] {
@@ -60,11 +61,16 @@ function validateProbeFeatures(items: Diagnostic[], state: AppState, kin: Kinema
   if (!inRect(meshNozzleMinX, meshNozzleMinY, v) || !inRect(meshNozzleMaxX, meshNozzleMaxY, v)) {
     warn(items, 'Some mesh points require nozzle positions outside travel because of probe offset.', 'mesh_xmin');
   }
-  state.screws.forEach((s, index) => {
-    if (!inRect(s.x - num(v.probe_x_offset), s.y - num(v.probe_y_offset), v)) {
-      warn(items, `Screw ${index + 1} is not reachable by the probe within nozzle travel.`, 'probe_x_offset');
+  if (v.screwsEnabled) {
+    if (hasValue(v.screw_thread) && !isOfficialScrewThread(v.screw_thread)) {
+      warn(items, `Screw thread "${v.screw_thread}" is not one of Klipper's official values: ${screwThreadOptions.join(', ')}.`, 'screw_thread');
     }
-  });
+    state.screws.forEach((s, index) => {
+      if (!inRect(s.x - num(v.probe_x_offset), s.y - num(v.probe_y_offset), v)) {
+        warn(items, `Screw ${index + 1} is not reachable by the probe within nozzle travel.`, 'probe_x_offset');
+      }
+    });
+  }
 }
 
 function validateDelta(items: Diagnostic[], state: AppState): void {

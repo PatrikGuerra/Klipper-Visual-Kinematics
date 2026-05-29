@@ -130,7 +130,6 @@ export interface MacroDefinition {
   id: string;
   name: string;
   description: string;
-  enabled: boolean;
   gcode: string;
   paramsText: string;
   simulationStartMode: MacroSimulationStartMode;

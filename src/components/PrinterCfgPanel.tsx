@@ -61,7 +61,7 @@ export default function PrinterCfgPanel(props: PrinterCfgPanelProps) {
       </div>
 
       <div class="cfg-panel-actions-stack">
-        <Button onClick={openEditor} className="w-full"><PenLine size={15} />Open editor</Button>
+        <Button onClick={openEditor} className="w-full cfg-open-editor-button"><PenLine size={15} />Open editor</Button>
         <Button variant="secondary" onClick={copyConfig} className="w-full"><Copy size={15} />Copy</Button>
         <Button variant="outline" onClick={downloadConfig} className="w-full"><Download size={15} />Download .cfg</Button>
       </div>

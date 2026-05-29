@@ -2,7 +2,6 @@ import type { MacroDefinition } from '../kinematics/types';
 
 export function generateMacrosConfig(macros: MacroDefinition[]): string {
   return macros
-    .filter((macro) => macro.enabled)
     .map(generateMacroConfig)
     .filter(Boolean)
     .join('\n\n');
@@ -36,4 +35,3 @@ export function normalizeGcodeIndent(gcode: string): string {
     .map((line) => (line.trim() ? `  ${line.replace(/^\s+/, '')}` : ''))
     .join('\n');
 }
-

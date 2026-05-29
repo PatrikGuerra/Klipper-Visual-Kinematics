@@ -24,10 +24,9 @@ function validateMacroBasics(macro: MacroDefinition, items: Diagnostic[]): void 
   if (name && !/^[A-Za-z_]+[0-9]*$/.test(name)) {
     error(items, `Macro "${name}" has an invalid Klipper macro name. Use letters/underscore, with numbers only at the end.`, 'macro');
   }
-  if (macro.enabled && !macro.gcode.trim()) error(items, `Macro "${name || 'unnamed'}" is enabled but has empty gcode.`, 'macro');
+  if (!macro.gcode.trim()) error(items, `Macro "${name || 'unnamed'}" has empty gcode.`, 'macro');
 }
 
 function error(items: Diagnostic[], message: string, field?: string): void {
   items.push({ type: 'error', message, field });
 }
-

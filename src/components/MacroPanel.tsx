@@ -264,7 +264,7 @@ export default function MacroPanel(props: MacroPanelProps) {
     <section classList={{ panel: !props.vertical, 'macro-panel-vertical': !!props.vertical, collapsed: !props.vertical && props.state.ui.macroOutputCollapsed }} class="macro-panel">
       <div class="panel-title macro-panel-title">
         <Show when={props.vertical} fallback={<button type="button" class="collapse-toggle" aria-expanded={!props.state.ui.macroOutputCollapsed} onClick={() => updateMutable((draft) => (draft.ui.macroOutputCollapsed = !draft.ui.macroOutputCollapsed))}><span>{props.state.ui.macroOutputCollapsed ? '>' : 'v'}</span><span>Macros</span></button>}>
-          <span>Macro Editor</span>
+          <></>
         </Show>
         <div class="button-row">
           <button type="button" class="primary" onClick={() => addMacro('blank')}><Plus size={14} />Add Macro</button>
@@ -278,20 +278,20 @@ export default function MacroPanel(props: MacroPanelProps) {
           <>
             <div class="macro-grid">
               <div class="macro-controls">
-                <label for="active-macro">Active macro</label>
-                <select id="active-macro" value={macro().id} onChange={(event) => setActive(event.currentTarget.value)}>
-                  <For each={props.state.macros}>{(item) => <option value={item.id}>{item.name}</option>}</For>
-                </select>
+                <div class="macro-block-divider"></div>
+                <div>
+                  <label for="active-macro">Active macro</label>
+                  <select id="active-macro" value={macro().id} onChange={(event) => setActive(event.currentTarget.value)}>
+                    <For each={props.state.macros}>{(item) => <option value={item.id}>{item.name}</option>}</For>
+                  </select>
+                </div>
 
                 <div class="button-row macro-actions">
                   <button type="button" onClick={duplicateMacro}><Copy size={14} />Duplicate</button>
                   <button type="button" class="danger" onClick={deleteMacro}><Trash2 size={14} />Delete</button>
-                  <label class="toggle">
-                    <input type="checkbox" checked={macro().enabled} onChange={(event) => updateActive((item) => (item.enabled = event.currentTarget.checked), false)} />
-                    <span>Include in printer.cfg</span>
-                  </label>
                 </div>
 
+                <div class="macro-block-divider"></div>
                 <div class="field-grid">
                   <div class="field">
                     <label for="macro-name">Macro name</label>

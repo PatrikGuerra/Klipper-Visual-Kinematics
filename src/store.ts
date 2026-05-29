@@ -92,7 +92,6 @@ function normalizeMacros(macros: unknown[], toolhead: Toolhead): MacroDefinition
       id: typeof macro.id === 'string' && macro.id ? macro.id : `macro-${index + 1}`,
       name: typeof macro.name === 'string' && macro.name ? macro.name : `CUSTOM_MACRO_${index + 1}`,
       description: typeof macro.description === 'string' ? macro.description : '',
-      enabled: typeof macro.enabled === 'boolean' ? macro.enabled : true,
       gcode: typeof macro.gcode === 'string' ? macro.gcode : '',
       paramsText: typeof macro.paramsText === 'string' ? macro.paramsText : '',
       simulationStartMode: macro.simulationStartMode === 'manual' ? 'manual' : 'current',

@@ -41,6 +41,10 @@ export default function VisualizerCanvas(props: VisualizerCanvasProps) {
 
   createEffect(() => {
     JSON.stringify(props.state.values);
+    JSON.stringify(props.state.screws);
+    JSON.stringify(props.state.winches);
+    JSON.stringify(props.state.carriages);
+    JSON.stringify(props.state.genericSteppers);
     JSON.stringify(props.state.toolhead);
     JSON.stringify(props.state.ui);
     JSON.stringify(props.state.macroPreview);
@@ -56,7 +60,7 @@ export default function VisualizerCanvas(props: VisualizerCanvasProps) {
       if (!result) return;
       map = result.map;
       draw = result.draw;
-      if (props.state.ui.sideViewEnabled && sideCanvas) drawSideView(sideCanvas, props.state);
+      if (sideCanvas) drawSideView(sideCanvas, props.state);
     });
   }
 
@@ -148,10 +152,6 @@ export default function VisualizerCanvas(props: VisualizerCanvasProps) {
     patchUi({ dimensionLayers: next });
   }
 
-  function toggleSideView(): void {
-    patchUi({ sideViewEnabled: !props.state.ui.sideViewEnabled });
-  }
-
   function zoomBy(factor: number): void {
     patchUi({ zoom: Math.max(0.35, Math.min(10, props.state.ui.zoom * factor)) });
   }
@@ -187,7 +187,6 @@ export default function VisualizerCanvas(props: VisualizerCanvasProps) {
               </div>
             </Show>
           </div>
-          <button type="button" classList={{ success: props.state.ui.sideViewEnabled }} onClick={toggleSideView}>Side</button>
           <button type="button" classList={{ primary: props.state.ui.testMode }} onClick={toggleTest}><MousePointer2 size={13} />Test</button>
           <button type="button" class="tool-button" aria-label="Zoom out" onClick={() => zoomBy(1 / 1.25)}><ZoomOut size={13} /></button>
           <span class="zoom-label">{Math.round(props.state.ui.zoom * 100)}%</span>
@@ -196,7 +195,7 @@ export default function VisualizerCanvas(props: VisualizerCanvasProps) {
         </div>
       </div>
 
-      <div classList={{ 'side-enabled': props.state.ui.sideViewEnabled }} class="viewer-canvas-grid">
+      <div class="viewer-canvas-grid side-enabled">
         <div class="canvas-shell">
           <canvas
             ref={canvas}
@@ -209,11 +208,9 @@ export default function VisualizerCanvas(props: VisualizerCanvasProps) {
             onClick={onClick}
           />
         </div>
-        <Show when={props.state.ui.sideViewEnabled}>
-          <div class="side-view-shell">
-            <canvas ref={sideCanvas} aria-label="Z side view" />
-          </div>
-        </Show>
+        <div class="side-view-shell">
+          <canvas ref={sideCanvas} aria-label="Z side view" />
+        </div>
       </div>
     </div>
   );
