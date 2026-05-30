@@ -3,6 +3,7 @@ import { CircleHelp, Copy, Eye, Pause, Play, Plus, RotateCcw, Sparkles, SquarePa
 import { updateActiveMacro, updateMutable } from '../store';
 import { createBlankMacro, createNozzleCleaningMacro, createParkToolheadMacro } from '../macros/presets';
 import { simulateMacro } from '../macros/simulator';
+import GcodeEditor from './GcodeEditor';
 import type { AppState, MacroDefinition, MacroSegment, Toolhead } from '../kinematics/types';
 
 interface MacroPanelProps {
@@ -17,6 +18,7 @@ export default function MacroPanel(props: MacroPanelProps) {
   let animatedSegmentIndex = -999;
 
   const activeMacro = createMemo(() => props.state.macros.find((macro) => macro.id === props.state.activeMacroId) ?? props.state.macros[0]);
+  const localMacroNames = createMemo(() => props.state.macros.filter((macro) => macro.id !== props.state.activeMacroId).map((macro) => macro.name));
   const macroDiagnostics = createMemo(() => (props.state.macroPreview.macroId === activeMacro()?.id ? props.state.macroPreview.diagnostics : []));
   const finalExtruder = createMemo(() => Number(props.state.macroPreview.finalExtruder ?? 0));
   const totalExtrusion = createMemo(() => Number(props.state.macroPreview.totalExtrusion ?? 0));
@@ -354,7 +356,7 @@ export default function MacroPanel(props: MacroPanelProps) {
                 <label for="macro-params">Optional config lines before gcode:</label>
                 <textarea id="macro-params" rows={2} spellcheck={false} value={macro().paramsText} onInput={(event) => updateActive((item) => (item.paramsText = event.currentTarget.value), false)} />
                 <label for="macro-gcode">G-code block</label>
-                <textarea id="macro-gcode" class="gcode-editor" rows={13} spellcheck={false} value={macro().gcode} onInput={(event) => updateActive((item) => (item.gcode = event.currentTarget.value))} />
+                <GcodeEditor id="macro-gcode" ariaLabel="G-code block" value={macro().gcode} macroNames={localMacroNames()} onChange={(value) => updateActive((item) => (item.gcode = value))} />
               </div>
             </div>
 
