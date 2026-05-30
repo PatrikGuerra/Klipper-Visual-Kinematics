@@ -1,11 +1,21 @@
-import { createEffect } from 'solid-js';
+import { createEffect, onCleanup } from 'solid-js';
 import { createStore, produce, reconcile } from 'solid-js/store';
 import { createDefaultState, specificDefaults, commonDefaults } from './kinematics/defaults';
-import { kinematicById } from './kinematics/catalog';
 import { normalizeDimensionLayers } from './kinematics/dimensionLayers';
+import {
+  normalizeCarriages,
+  normalizeGenericSteppers,
+  normalizeMacros,
+  normalizeNestedStringRecord,
+  normalizeScrews,
+  normalizeStringArrayRecord,
+  normalizeToolhead,
+  normalizeWinches,
+  resolveDefaultToolhead
+} from './kinematics/stateNormalization';
 import { simulateMacro } from './macros/simulator';
 import { applyPortableShareState, createPortableShareState, decodeShareState, encodeShareState, readShareHash, writeShareHash } from './share/shareState';
-import type { AppState, FieldValue, MacroDefinition, Toolhead } from './kinematics/types';
+import type { AppState, FieldValue, MacroDefinition } from './kinematics/types';
 
 const STORAGE_KEY = 'klipper-visual-kinematics-solid-v1';
 const LEGACY_KEYS = ['klipper-visual-kinematics-svelte-v1', 'klipper-visual-kinematics-v1'];
@@ -17,25 +27,7 @@ function normalizeValue(value: FieldValue | string): FieldValue {
 }
 
 function resetToolheadForKinematic(state: AppState): AppState {
-  const kin = kinematicById(state.values.kinematics);
-  const zHop = Number(state.values.z_hop) || 15;
-  if (kin.family === 'delta' || kin.family === 'rotary_delta' || kin.family === 'polar') {
-    state.toolhead = { x: 0, y: 0, z: Math.max(5, zHop) };
-    return state;
-  }
-  if (kin.family === 'none') {
-    state.toolhead = { x: 0, y: 0, z: 0 };
-    return state;
-  }
-  const xMin = Number(state.values.x_min) || 0;
-  const xMax = Number(state.values.x_max) || Number(state.values.bed_x) || 250;
-  const yMin = Number(state.values.y_min) || 0;
-  const yMax = Number(state.values.y_max) || Number(state.values.bed_y) || 280;
-  state.toolhead = {
-    x: (xMin + xMax) / 2,
-    y: (yMin + yMax) / 2,
-    z: Math.max(5, zHop)
-  };
+  state.toolhead = resolveDefaultToolhead(state.values);
   return state;
 }
 
@@ -44,15 +36,16 @@ export function mergeStoredState(raw: unknown): AppState {
   if (!raw || typeof raw !== 'object') return defaults;
   const candidate = raw as Partial<AppState>;
   if (!candidate.values || typeof candidate.values !== 'object') return defaults;
-  const toolhead = normalizeToolhead(candidate.toolhead, defaults.toolhead);
-  const macros = Array.isArray(candidate.macros) ? normalizeMacros(candidate.macros, toolhead) : defaults.macros;
+  const values = { ...commonDefaults, ...specificDefaults, ...candidate.values };
+  const toolhead = normalizeToolhead(candidate.toolhead, resolveDefaultToolhead(values));
+  const macros = normalizeMacros(candidate.macros, toolhead, defaults.macros);
   const activeMacroId = candidate.activeMacroId && macros.some((macro) => macro.id === candidate.activeMacroId) ? candidate.activeMacroId : macros[0]?.id ?? '';
   const candidateUi = candidate.ui && typeof candidate.ui === 'object' ? candidate.ui as Partial<AppState['ui']> & { showDimensions?: unknown; sideViewAxis?: unknown; sideViewEnabled?: unknown } : {};
   const { showDimensions: legacyShowDimensions, sideViewAxis: _legacySideViewAxis, sideViewEnabled: _legacySideViewEnabled, ...storedUi } = candidateUi;
   const merged: AppState = {
     ...defaults,
     ...candidate,
-    values: { ...commonDefaults, ...specificDefaults, ...candidate.values },
+    values,
     ui: {
       ...defaults.ui,
       ...storedUi,
@@ -62,10 +55,10 @@ export function mergeStoredState(raw: unknown): AppState {
       configExtraLines: normalizeStringArrayRecord(storedUi.configExtraLines)
     },
     toolhead,
-    screws: Array.isArray(candidate.screws) ? candidate.screws : defaults.screws,
-    winches: Array.isArray(candidate.winches) ? candidate.winches : defaults.winches,
-    carriages: Array.isArray(candidate.carriages) ? candidate.carriages : defaults.carriages,
-    genericSteppers: Array.isArray(candidate.genericSteppers) ? candidate.genericSteppers : defaults.genericSteppers,
+    screws: normalizeScrews(candidate.screws, defaults.screws),
+    winches: normalizeWinches(candidate.winches, defaults.winches),
+    carriages: normalizeCarriages(candidate.carriages, defaults.carriages),
+    genericSteppers: normalizeGenericSteppers(candidate.genericSteppers, defaults.genericSteppers),
     macros,
     activeMacroId,
     macroPreview: defaults.macroPreview,
@@ -75,53 +68,6 @@ export function mergeStoredState(raw: unknown): AppState {
   merged.macroPreview = activeMacro ? simulateMacro(activeMacro, merged) : defaults.macroPreview;
   if (!Number.isFinite(Number(merged.macroRun.segmentProgress))) merged.macroRun.segmentProgress = 0;
   return merged;
-}
-
-function normalizeNestedStringRecord(value: unknown): Record<string, Record<string, string>> {
-  if (!value || typeof value !== 'object') return {};
-  return Object.entries(value as Record<string, unknown>).reduce<Record<string, Record<string, string>>>((sections, [section, entries]) => {
-    if (!entries || typeof entries !== 'object') return sections;
-    const normalizedEntries = Object.entries(entries as Record<string, unknown>).reduce<Record<string, string>>((acc, [key, rawLine]) => {
-      if (typeof rawLine === 'string') acc[key.toLowerCase()] = rawLine;
-      return acc;
-    }, {});
-    if (Object.keys(normalizedEntries).length) sections[section.toLowerCase()] = normalizedEntries;
-    return sections;
-  }, {});
-}
-
-function normalizeStringArrayRecord(value: unknown): Record<string, string[]> {
-  if (!value || typeof value !== 'object') return {};
-  return Object.entries(value as Record<string, unknown>).reduce<Record<string, string[]>>((sections, [section, lines]) => {
-    if (!Array.isArray(lines)) return sections;
-    const normalizedLines = lines.filter((line): line is string => typeof line === 'string');
-    if (normalizedLines.length) sections[section.toLowerCase()] = normalizedLines;
-    return sections;
-  }, {});
-}
-
-function normalizeToolhead(value: unknown, fallback: Toolhead): Toolhead {
-  if (!value || typeof value !== 'object') return fallback;
-  const candidate = value as Partial<Toolhead>;
-  return {
-    x: Number.isFinite(Number(candidate.x)) ? Number(candidate.x) : fallback.x,
-    y: Number.isFinite(Number(candidate.y)) ? Number(candidate.y) : fallback.y,
-    z: Number.isFinite(Number(candidate.z)) ? Number(candidate.z) : fallback.z
-  };
-}
-
-function normalizeMacros(macros: unknown[], toolhead: Toolhead): MacroDefinition[] {
-  return macros
-    .filter((macro): macro is Partial<MacroDefinition> => !!macro && typeof macro === 'object')
-    .map((macro, index) => ({
-      id: typeof macro.id === 'string' && macro.id ? macro.id : `macro-${index + 1}`,
-      name: typeof macro.name === 'string' && macro.name ? macro.name : `CUSTOM_MACRO_${index + 1}`,
-      description: typeof macro.description === 'string' ? macro.description : '',
-      gcode: typeof macro.gcode === 'string' ? macro.gcode : '',
-      paramsText: typeof macro.paramsText === 'string' ? macro.paramsText : '',
-      simulationStartMode: macro.simulationStartMode === 'manual' ? 'manual' : 'current',
-      simulationStart: normalizeToolhead(macro.simulationStart, toolhead)
-    }));
 }
 
 function refreshCurrentMacroPreview(state: AppState): void {
@@ -176,16 +122,22 @@ export function persistAppState(): void {
       localStorage.setItem(STORAGE_KEY, serialized);
     }, 120);
   });
+  onCleanup(() => {
+    if (typeof window !== 'undefined') window.clearTimeout(storeTimer);
+  });
 }
 
 export function syncShareUrl(): void {
   createEffect(() => {
     if (typeof window === 'undefined') return;
-    createPortableShareState(appState);
+    const portable = createPortableShareState(appState);
     window.clearTimeout(shareTimer);
     shareTimer = window.setTimeout(() => {
-      writeShareHash(encodeShareState(appState));
+      writeShareHash(encodeShareState(portable));
     }, 450);
+  });
+  onCleanup(() => {
+    if (typeof window !== 'undefined') window.clearTimeout(shareTimer);
   });
 }
 

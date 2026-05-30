@@ -1,9 +1,22 @@
 import { deflateRaw, inflateRaw } from 'pako';
 import { createDefaultState, commonDefaults, specificDefaults } from '../kinematics/defaults';
+import {
+  cloneNestedStringRecord,
+  cloneStringArrayRecord,
+  normalizeCarriages,
+  normalizeGenericSteppers,
+  normalizeMacros,
+  normalizeNestedStringRecord,
+  normalizeScrews,
+  normalizeStringArrayRecord,
+  normalizeWinches,
+  resolveDefaultToolhead
+} from '../kinematics/stateNormalization';
 import { simulateMacro } from '../macros/simulator';
-import type { AppState, Carriage, FieldValue, GenericStepper, MacroDefinition, Screw, Toolhead, Winch } from '../kinematics/types';
+import type { AppState, Carriage, FieldValue, GenericStepper, MacroDefinition, Screw, Winch } from '../kinematics/types';
 
 export const SHARE_SCHEMA_VERSION = 1;
+export const SHARE_URL_WARNING_LENGTH = 6000;
 
 export interface PortableShareState {
   schemaVersion: 1;
@@ -14,7 +27,6 @@ export interface PortableShareState {
   genericSteppers: GenericStepper[];
   macros: MacroDefinition[];
   activeMacroId: string;
-  toolhead: Toolhead;
   unmanagedConfigText: string;
   configLineOverrides: Record<string, Record<string, string>>;
   configExtraLines: Record<string, string[]>;
@@ -30,7 +42,6 @@ export function createPortableShareState(state: AppState): PortableShareState {
     genericSteppers: state.genericSteppers.map((stepper) => ({ ...stepper })),
     macros: state.macros.map((macro) => ({ ...macro, simulationStart: { ...macro.simulationStart } })),
     activeMacroId: state.activeMacroId,
-    toolhead: { ...state.toolhead },
     unmanagedConfigText: String(state.ui.unmanagedConfigText || ''),
     configLineOverrides: cloneNestedStringRecord(state.ui.configLineOverrides),
     configExtraLines: cloneStringArrayRecord(state.ui.configExtraLines)
@@ -40,11 +51,12 @@ export function createPortableShareState(state: AppState): PortableShareState {
 export function applyPortableShareState(portable: PortableShareState, state: AppState): void {
   assertPortableShareState(portable);
   const defaults = createDefaultState();
-  const toolhead = normalizeToolhead(portable.toolhead, defaults.toolhead);
+  const values = { ...commonDefaults, ...specificDefaults, ...portable.values };
+  const toolhead = resolveDefaultToolhead(values);
   const macros = normalizeMacros(portable.macros, toolhead, defaults.macros);
   const activeMacroId = portable.activeMacroId && macros.some((macro) => macro.id === portable.activeMacroId) ? portable.activeMacroId : macros[0]?.id ?? '';
 
-  state.values = { ...commonDefaults, ...specificDefaults, ...portable.values };
+  state.values = values;
   state.screws = normalizeScrews(portable.screws, defaults.screws);
   state.winches = normalizeWinches(portable.winches, defaults.winches);
   state.carriages = normalizeCarriages(portable.carriages, defaults.carriages);
@@ -66,8 +78,8 @@ export function applyPortableShareState(portable: PortableShareState, state: App
   };
 }
 
-export function encodeShareState(state: AppState): string {
-  const json = JSON.stringify(createPortableShareState(state));
+export function encodeShareState(state: AppState | PortableShareState): string {
+  const json = JSON.stringify(isPortableShareState(state) ? state : createPortableShareState(state));
   return bytesToBase64Url(deflateRaw(new TextEncoder().encode(json)));
 }
 
@@ -126,118 +138,8 @@ function assertPortableShareState(value: unknown): asserts value is PortableShar
   if (!candidate.values || typeof candidate.values !== 'object') throw new Error('Invalid share URL payload.');
 }
 
-function normalizeToolhead(value: unknown, fallback: Toolhead): Toolhead {
-  if (!value || typeof value !== 'object') return fallback;
-  const candidate = value as Partial<Toolhead>;
-  return {
-    x: finiteNumber(candidate.x, fallback.x),
-    y: finiteNumber(candidate.y, fallback.y),
-    z: finiteNumber(candidate.z, fallback.z)
-  };
-}
-
-function normalizeScrews(items: unknown, fallback: Screw[]): Screw[] {
-  if (!Array.isArray(items)) return fallback;
-  const normalized = items
-    .filter((item): item is Partial<Screw> => !!item && typeof item === 'object')
-    .map((item, index) => ({
-      x: finiteNumber(item.x, 0),
-      y: finiteNumber(item.y, 0),
-      name: typeof item.name === 'string' && item.name ? item.name : `Screw ${index + 1}`
-    }));
-  return normalized.length ? normalized : fallback;
-}
-
-function normalizeWinches(items: unknown, fallback: Winch[]): Winch[] {
-  if (!Array.isArray(items)) return fallback;
-  const normalized = items
-    .filter((item): item is Partial<Winch> => !!item && typeof item === 'object')
-    .map((item, index) => ({
-      name: typeof item.name === 'string' && item.name ? item.name : String.fromCharCode(65 + index),
-      x: finiteNumber(item.x, 0),
-      y: finiteNumber(item.y, 0),
-      z: finiteNumber(item.z, 0),
-      rotation_distance: finiteNumber(item.rotation_distance, 40)
-    }));
-  return normalized.length ? normalized : fallback;
-}
-
-function normalizeCarriages(items: unknown, fallback: Carriage[]): Carriage[] {
-  if (!Array.isArray(items)) return fallback;
-  const normalized = items
-    .filter((item): item is Partial<Carriage> => !!item && typeof item === 'object')
-    .map((item, index) => ({
-      name: typeof item.name === 'string' && item.name ? item.name : `carriage_${index + 1}`,
-      axis: typeof item.axis === 'string' && item.axis ? item.axis : 'x',
-      min: finiteNumber(item.min, 0),
-      max: finiteNumber(item.max, 100),
-      endstop: finiteNumber(item.endstop, 0)
-    }));
-  return normalized.length ? normalized : fallback;
-}
-
-function normalizeGenericSteppers(items: unknown, fallback: GenericStepper[]): GenericStepper[] {
-  if (!Array.isArray(items)) return fallback;
-  const normalized = items
-    .filter((item): item is Partial<GenericStepper> => !!item && typeof item === 'object')
-    .map((item, index) => ({
-      name: typeof item.name === 'string' && item.name ? item.name : `stepper s${index}`,
-      carriages: typeof item.carriages === 'string' ? item.carriages : 'carriage_x',
-      equation: typeof item.equation === 'string' ? item.equation : 'x'
-    }));
-  return normalized.length ? normalized : fallback;
-}
-
-function normalizeMacros(items: unknown, toolhead: Toolhead, fallback: MacroDefinition[]): MacroDefinition[] {
-  if (!Array.isArray(items)) return fallback;
-  const normalized = items
-    .filter((item): item is Partial<MacroDefinition> => !!item && typeof item === 'object')
-    .map((item, index) => ({
-      id: typeof item.id === 'string' && item.id ? item.id : `macro-${index + 1}`,
-      name: typeof item.name === 'string' && item.name ? item.name : `CUSTOM_MACRO_${index + 1}`,
-      description: typeof item.description === 'string' ? item.description : '',
-      gcode: typeof item.gcode === 'string' ? item.gcode : '',
-      paramsText: typeof item.paramsText === 'string' ? item.paramsText : '',
-      simulationStartMode: item.simulationStartMode === 'manual' ? 'manual' as const : 'current' as const,
-      simulationStart: normalizeToolhead(item.simulationStart, toolhead)
-    }));
-  return normalized.length ? normalized : fallback;
-}
-
-function normalizeNestedStringRecord(value: unknown): Record<string, Record<string, string>> {
-  if (!value || typeof value !== 'object') return {};
-  return Object.entries(value as Record<string, unknown>).reduce<Record<string, Record<string, string>>>((sections, [section, entries]) => {
-    if (!entries || typeof entries !== 'object') return sections;
-    const normalizedEntries = Object.entries(entries as Record<string, unknown>).reduce<Record<string, string>>((acc, [key, rawLine]) => {
-      if (typeof rawLine === 'string') acc[key.toLowerCase()] = rawLine;
-      return acc;
-    }, {});
-    if (Object.keys(normalizedEntries).length) sections[section.toLowerCase()] = normalizedEntries;
-    return sections;
-  }, {});
-}
-
-function normalizeStringArrayRecord(value: unknown): Record<string, string[]> {
-  if (!value || typeof value !== 'object') return {};
-  return Object.entries(value as Record<string, unknown>).reduce<Record<string, string[]>>((sections, [section, lines]) => {
-    if (!Array.isArray(lines)) return sections;
-    const normalizedLines = lines.filter((line): line is string => typeof line === 'string');
-    if (normalizedLines.length) sections[section.toLowerCase()] = normalizedLines;
-    return sections;
-  }, {});
-}
-
-function cloneNestedStringRecord(value: Record<string, Record<string, string>>): Record<string, Record<string, string>> {
-  return Object.fromEntries(Object.entries(value ?? {}).map(([section, entries]) => [section, { ...entries }]));
-}
-
-function cloneStringArrayRecord(value: Record<string, string[]>): Record<string, string[]> {
-  return Object.fromEntries(Object.entries(value ?? {}).map(([section, lines]) => [section, [...lines]]));
-}
-
-function finiteNumber(value: unknown, fallback: number): number {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : fallback;
+function isPortableShareState(value: AppState | PortableShareState): value is PortableShareState {
+  return 'schemaVersion' in value && value.schemaVersion === SHARE_SCHEMA_VERSION;
 }
 
 function bytesToBase64Url(bytes: Uint8Array): string {
