@@ -34,10 +34,6 @@ export default function AboutModal(props: AboutModalProps) {
         </header>
 
         <div class="about-modal-body">
-          <section class="about-intro-card">
-            <p>Direct dependencies used by this app, ordered by usage.</p>
-          </section>
-
           <ul class="credits-bullet-list">
             <For each={orderedCredits()}>
               {(credit) => (
