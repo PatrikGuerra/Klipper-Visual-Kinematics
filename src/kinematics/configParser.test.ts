@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { generateConfig } from './configGenerator';
-import { appendUnmanagedConfig, applyConfigTextToState } from './configParser';
+import { appendUnmanagedConfig, applyConfigTextToState, getPrinterCfgText } from './configParser';
 import { createDefaultState } from './defaults';
 import { generateMacrosConfig } from '../macros/configGenerator';
 
@@ -50,10 +50,55 @@ describe('printer.cfg parser', () => {
     expect(result.diagnostics.some((item) => item.message.includes('Unsupported section'))).toBe(true);
   });
 
-  it('reports invalid key/value lines without throwing', () => {
+  it('reports invalid key/value lines and skips visual apply for that section', () => {
     const state = createDefaultState();
-    const result = applyConfigTextToState('[printer]\nthis is not valid', state);
+    state.values.max_velocity = 200;
+    const result = applyConfigTextToState('[printer]\nmax_velocity: 777\nthis is not valid', state);
     expect(result.diagnostics.some((item) => item.message.includes('not a key/value'))).toBe(true);
+    expect(result.diagnostics.some((item) => item.message.includes('Skipped visual apply'))).toBe(true);
+    expect(state.values.max_velocity).toBe(200);
+    expect(result.configLineOverrides.printer.max_velocity).toBe('max_velocity: 777');
+    expect(result.configExtraLines.printer).toContain('this is not valid');
+  });
+
+  it('preserves hardware lines in known sections after parse and generate', () => {
+    const state = createDefaultState();
+    const result = applyConfigTextToState('[stepper_x]\nstep_pin: PB13\ndir_pin: PB12\nenable_pin: !PB14\nposition_min: -10\nposition_max: 230', state);
+    state.ui.configLineOverrides = result.configLineOverrides;
+    state.ui.configExtraLines = result.configExtraLines;
+    const generated = generateConfig(state);
+    const stepperX = generated.slice(generated.indexOf('[stepper_x]'), generated.indexOf('[stepper_y]'));
+    expect(stepperX).toContain('step_pin: PB13');
+    expect(stepperX).toContain('dir_pin: PB12');
+    expect(stepperX).toContain('enable_pin: !PB14');
+    expect(stepperX).not.toContain('step_pin: CHANGE_ME');
+  });
+
+  it('reads second_homing_speed from cartesian axis steppers without warning', () => {
+    const state = createDefaultState();
+    const result = applyConfigTextToState('[stepper_x]\nhoming_speed: 55\nsecond_homing_speed: 18', state);
+    expect(state.values.homing_speed_x).toBe(55);
+    expect(state.values.second_homing_speed).toBe(18);
+    expect(result.diagnostics.some((item) => item.message.includes('second_homing_speed'))).toBe(false);
+  });
+
+  it('preserves unsupported keys inside known sections in the same section', () => {
+    const state = createDefaultState();
+    const result = applyConfigTextToState('[extruder]\nrotation_distance: 22.67\npressure_advance: 0.035', state);
+    state.ui.configLineOverrides = result.configLineOverrides;
+    const generated = generateConfig(state);
+    const extruder = generated.slice(generated.indexOf('[extruder]'));
+    expect(extruder).toContain('# Preserved user config');
+    expect(extruder).toContain('pressure_advance: 0.035');
+    expect(result.diagnostics.some((item) => item.message.includes('pressure_advance'))).toBe(true);
+  });
+
+  it('keeps an intentionally empty dirty cfg draft instead of falling back to generated cfg', () => {
+    const state = createDefaultState();
+    const generated = generateConfig(state);
+    state.ui.printerCfgDirty = true;
+    state.ui.printerCfgDraft = '';
+    expect(getPrinterCfgText(state, generated)).toBe('');
   });
 
   it('round-trips generated cartesian, extruder, and macro config basics', () => {

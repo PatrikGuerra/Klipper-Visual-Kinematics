@@ -49,7 +49,7 @@ describe('solid app store actions', () => {
   it('defaults side view and dimension layer state', () => {
     const state = createDefaultState();
 
-    expect(state.ui.sideViewEnabled).toBe(true);
+    expect('sideViewEnabled' in state.ui).toBe(false);
     expect(areDimensionLayersActive(state.ui.dimensionLayers)).toBe(false);
   });
 
@@ -65,6 +65,15 @@ describe('solid app store actions', () => {
     expect(state.ui.dimensionLayers.travelLimits).toBe(false);
     expect('showDimensions' in state.ui).toBe(false);
     expect('sideViewAxis' in state.ui).toBe(false);
+  });
+
+  it('ignores legacy side view visibility while loading stored state', () => {
+    const state = mergeStoredState({
+      values: { kinematics: 'cartesian' },
+      ui: { sideViewEnabled: false }
+    });
+
+    expect('sideViewEnabled' in state.ui).toBe(false);
   });
 
   it('detects active dimension layers', () => {

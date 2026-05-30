@@ -1,14 +1,17 @@
-import { createMemo, createSignal, For, Show } from 'solid-js';
-import { Plus, RotateCcw, Search, X } from 'lucide-solid';
+import { createMemo, createSignal, Show } from 'solid-js';
+import { Plus } from 'lucide-solid';
 import { commonFieldGroups } from '../kinematics/fields';
-import { kinematicsCatalog, kinematicById } from '../kinematics/catalog';
+import { kinematicById } from '../kinematics/catalog';
 import { geometryLayout, kinematicLayouts, probeLayout } from '../kinematics/fieldLayouts';
 import { num } from '../kinematics/math';
-import { normalizeScrewReference, screwReferenceOptions } from '../kinematics/screwReference';
-import { normalizeScrewThread, screwThreadOptions } from '../kinematics/screwThreads';
-import { resetState, setValue, updateMutable } from '../store';
+import { updateMutable, setValue } from '../store';
 import DynamicList from './DynamicList';
 import FieldGroup from './FieldGroup';
+import ConfigSearchPanel from './kinematics/ConfigSearchPanel';
+import KinematicsSelectorPanel from './kinematics/KinematicsSelectorPanel';
+import ProbePanel from './kinematics/ProbePanel';
+import SectionToggleTitle from './kinematics/SectionToggleTitle';
+import ScrewsPanel from './kinematics/ScrewsPanel';
 import type { AppState, Diagnostic, FieldDefinition } from '../kinematics/types';
 
 interface KinematicsPanelProps {
@@ -96,7 +99,6 @@ export default function KinematicsPanel(props: KinematicsPanelProps) {
   const screwMatchCount = createMemo(() => matchingFieldCount(props.state.screws, () => [['X', 'screw_x'], ['Y', 'screw_y'], ['Name', 'screw_name']]));
   const screwsEnabledMatches = createMemo(() => matchesText('Enable', 'screwsEnabled', '[screws_tilt_adjust]', 'enable screws'));
   const screwReferenceMatches = createMemo(() => matchesText('Input reference', 'screw_reference', 'usable bed', 'bed physical size', 'physical plate'));
-  const screwReferenceOption = createMemo(() => screwReferenceOptions.find((option) => option.id === normalizeScrewReference(props.state.values.screw_reference)) ?? screwReferenceOptions[0]);
   const winchMatchCount = createMemo(() => matchingFieldCount(props.state.winches, () => [['Name', 'winch_name'], ['Anchor X', 'anchor_x'], ['Anchor Y', 'anchor_y'], ['Anchor Z', 'anchor_z'], ['Rot dist', 'rotation_distance']]));
   const carriageMatchCount = createMemo(() => matchingFieldCount(props.state.carriages, () => [['Name', 'carriage_name'], ['Axis', 'axis'], ['Min', 'position_min'], ['Max', 'position_max'], ['Endstop', 'position_endstop']]));
   const genericStepperMatchCount = createMemo(() => matchingFieldCount(props.state.genericSteppers, () => [['Name', 'stepper_name'], ['Carriages', 'carriages'], ['Equation', 'equation']]));
@@ -151,20 +153,6 @@ export default function KinematicsPanel(props: KinematicsPanelProps) {
     return filteredFields.length > 0;
   }
 
-  function fieldClass(id: string): string {
-    const issues = props.diagnostics.filter((diagnostic) => diagnostic.field === id);
-    if (issues.some((diagnostic) => diagnostic.type === 'error')) return 'field-error';
-    if (issues.some((diagnostic) => diagnostic.type === 'warning')) return 'field-warning';
-    return '';
-  }
-
-  function titleFor(id: string): string {
-    return props.diagnostics
-      .filter((diagnostic) => diagnostic.field === id)
-      .map((diagnostic) => diagnostic.message)
-      .join('\n');
-  }
-
   function addScrew(): void {
     updateMutable((draft) => {
       draft.screws.push({
@@ -197,86 +185,42 @@ export default function KinematicsPanel(props: KinematicsPanelProps) {
 
   return (
     <aside class="sidebar">
-      <section class="panel config-search-panel">
-        <div class="panel-title"><span>Search config fields</span></div>
-        <div class="config-search">
-          <div class="search-input-row">
-            <Search size={15} />
-            <input id="config-search" type="text" placeholder="mesh, probe, velocity, stepper..." value={configSearch()} onInput={(event) => setConfigSearch(event.currentTarget.value)} />
-            <Show when={configSearch()}><button type="button" class="ghost search-clear" aria-label="Clear config search" onClick={() => setConfigSearch('')}><X size={14} /></button></Show>
-          </div>
-          <Show when={searchTerm()}><p class="help">{matchCount()} matching config item(s)</p></Show>
-        </div>
-      </section>
+      <ConfigSearchPanel value={configSearch()} matchCount={matchCount()} onInput={setConfigSearch} />
 
-      <section class="panel">
-        <div class="panel-title">
-          <span>Kinematics</span>
-          <button type="button" class="warning" onClick={resetState}><RotateCcw size={14} />Reset</button>
-        </div>
-        <label for="kinematics">Motion model</label>
-        <select id="kinematics" value={String(props.state.values.kinematics)} onChange={(event) => setValue('kinematics', event.currentTarget.value)}>
-          <For each={kinematicsCatalog}>{(option) => <option value={option.id}>{option.name} ({option.id})</option>}</For>
-        </select>
-        <p class="help">{kin().note}</p>
-      </section>
+      <KinematicsSelectorPanel selectedId={String(props.state.values.kinematics)} kin={kin()} />
 
       <Show when={showCommon()}><section class="panel"><div class="panel-title"><span>Common Motion</span></div><FieldGroup fields={commonFields()} state={props.state} diagnostics={props.diagnostics} emptyMessage="No matching config fields in this block." /></section></Show>
       <Show when={showGeometry()}><section class="panel"><div class="panel-title"><span>Machine Geometry</span></div><FieldGroup fields={geometryFields()} state={props.state} diagnostics={props.diagnostics} layout={geometryLayout} emptyMessage="No matching config fields in this block." /></section></Show>
       <Show when={showStepper()}><section class="panel"><div class="panel-title"><span>Stepper Defaults</span></div><FieldGroup fields={stepperFields()} state={props.state} diagnostics={props.diagnostics} emptyMessage="No matching config fields in this block." /><p class="help">Used to fill common [stepper] options. Step, dir, enable, and endstop pins are still emitted as CHANGE_ME per stepper.</p></section></Show>
-      <Show when={showExtruder()}><section class="panel"><div class="panel-title"><span>Extruder / E Stepper</span><label class="toggle"><input type="checkbox" checked={!!props.state.values.extruderEnabled} onChange={(event) => setValue('extruderEnabled', event.currentTarget.checked)} /><span>Enable</span></label></div><div classList={{ 'disabled-block': !props.state.values.extruderEnabled }}><FieldGroup fields={extruderFields()} state={props.state} diagnostics={props.diagnostics} emptyMessage="No matching config fields in this block." /><p class="help">Generates an optional [extruder] starter section. Heater, sensor, and stepper pins remain CHANGE_ME.</p></div></section></Show>
-
-      <Show when={showProbe()}>
+      <Show when={showExtruder()}>
         <section class="panel">
-          <div class="panel-title"><span>Probe & Mesh</span><label class="toggle"><input type="checkbox" checked={!!props.state.values.probeFeaturesEnabled} disabled={!kin().supportsProbeFeatures} onChange={(event) => setValue('probeFeaturesEnabled', event.currentTarget.checked)} /><span>Enable</span></label></div>
-          <div classList={{ 'disabled-block': !kin().supportsProbeFeatures || !props.state.values.probeFeaturesEnabled }}>
-            <FieldGroup fields={probeFields()} state={props.state} diagnostics={props.diagnostics} layout={probeLayout} emptyMessage="No matching config fields in this block." />
+          <SectionToggleTitle
+            id="enable-extruder-section"
+            label="Extruder / E Stepper"
+            checked={!!props.state.values.extruderEnabled}
+            tooltip="Enable the optional [extruder] section and E stepper fields in the generated printer.cfg."
+            onChange={(checked) => setValue('extruderEnabled', checked)}
+          />
+          <div classList={{ 'disabled-block': !props.state.values.extruderEnabled }}>
+            <FieldGroup fields={extruderFields()} state={props.state} diagnostics={props.diagnostics} emptyMessage="No matching config fields in this block." />
+            <p class="help">Generates an optional [extruder] starter section. Heater, sensor, and stepper pins remain CHANGE_ME.</p>
           </div>
         </section>
       </Show>
 
+      <Show when={showProbe()}><ProbePanel state={props.state} diagnostics={props.diagnostics} kin={kin()} fields={probeFields()} layout={probeLayout} /></Show>
+
       <Show when={showScrews()}>
-        <section class="panel">
-          <div class="panel-title">
-            <span>Screws</span>
-            <label class="toggle">
-              <input type="checkbox" checked={!!props.state.values.screwsEnabled} disabled={!kin().supportsProbeFeatures || !props.state.values.probeFeaturesEnabled} onChange={(event) => setValue('screwsEnabled', event.currentTarget.checked)} />
-              <span>Enable</span>
-            </label>
-            <Show when={!searchTerm()}><button type="button" class="success" onClick={addScrew}><Plus size={14} />Add</button></Show>
-          </div>
-          <div classList={{ 'disabled-block': !kin().supportsProbeFeatures || !props.state.values.probeFeaturesEnabled || !props.state.values.screwsEnabled }}>
-            <Show when={!searchTerm() || screwReferenceMatches()}>
-              <div class="screw-reference-control">
-                <label for="screw-reference">Input reference</label>
-                <select id="screw-reference" value={normalizeScrewReference(props.state.values.screw_reference)} onChange={(event) => setValue('screw_reference', event.currentTarget.value)}>
-                  <For each={screwReferenceOptions}>{(option) => <option value={option.id}>{option.label}</option>}</For>
-                </select>
-                <p class="help">{screwReferenceOption().help} The generated .cfg is converted to Klipper nozzle/probe coordinates.</p>
-              </div>
-            </Show>
-            <Show when={!searchTerm() || screwFields().length > 0}>
-              <div class="screw-thread-control">
-                <label for="screw-thread">Screw thread</label>
-                <input
-                  id="screw-thread"
-                  class={fieldClass('screw_thread')}
-                  title={titleFor('screw_thread')}
-                  type="text"
-                  list="screw-thread-options"
-                  value={String(props.state.values.screw_thread ?? '')}
-                  onInput={(event) => setValue('screw_thread', normalizeScrewThread(event.currentTarget.value))}
-                />
-                <datalist id="screw-thread-options">
-                  <For each={screwThreadOptions}>{(option) => <option value={option}>{option}</option>}</For>
-                </datalist>
-                <p class="help">Official suggestions are M3/M4/M5 with CW or CCW knob direction. Custom values are allowed here but may require manual Klipper review.</p>
-              </div>
-            </Show>
-            <DynamicList state={props.state} type="screws" filterText={configSearch()} />
-            <p class="help">When enabled, generates [screws_tilt_adjust] positions using the current probe offset.</p>
-          </div>
-        </section>
+        <ScrewsPanel
+          state={props.state}
+          diagnostics={props.diagnostics}
+          kin={kin()}
+          configSearch={configSearch()}
+          searchTerm={searchTerm()}
+          showReference={screwReferenceMatches()}
+          showThread={screwFields().length > 0}
+          onAddScrew={addScrew}
+        />
       </Show>
 
       <Show when={showKinematicSettings()}>

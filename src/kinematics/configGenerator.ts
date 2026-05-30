@@ -13,7 +13,7 @@ export function generateConfig(state: AppState): string {
   }
   if (state.values.extruderEnabled) sections.push(extruderSection(state));
   sections.push(summarySection(kin, state));
-  return sections.filter(Boolean).join('\n\n');
+  return applyPreservedConfigLines(sections.filter(Boolean).join('\n\n'), state);
 }
 
 function header(kin: KinematicDefinition, state: AppState): string {
@@ -281,4 +281,67 @@ function extruderSection(state: AppState): string {
 function summarySection(kin: KinematicDefinition, state: AppState): string {
   const motors = getMotorReadout(state).map((row) => `#   ${row.label}: ${row.value}`).join('\n');
   return ['# Positioning summary', `#   Kinematics: ${kin.id}`, `#   Toolhead: X${fmt(state.toolhead.x)} Y${fmt(state.toolhead.y)} Z${fmt(state.toolhead.z)}`, motors].join('\n');
+}
+
+interface GeneratedBlock {
+  name: string | null;
+  lines: string[];
+}
+
+function applyPreservedConfigLines(config: string, state: AppState): string {
+  const overrides = state.ui.configLineOverrides ?? {};
+  const extras = state.ui.configExtraLines ?? {};
+  if (!Object.keys(overrides).length && !Object.keys(extras).length) return config;
+
+  return parseGeneratedBlocks(config)
+    .map((block) => {
+      if (!block.name) return block.lines.join('\n');
+      const section = block.name.toLowerCase();
+      const sectionOverrides = overrides[section] ?? {};
+      const sectionExtras = extras[section] ?? [];
+      if (!Object.keys(sectionOverrides).length && !sectionExtras.length) return block.lines.join('\n');
+
+      const emitted = new Set<string>();
+      const nextLines = block.lines.map((line, index) => {
+        if (index === 0) return line;
+        const key = lineKey(line);
+        if (!key) return line;
+        emitted.add(key);
+        return sectionOverrides[key] ?? line;
+      });
+
+      const appended = Object.entries(sectionOverrides)
+        .filter(([key]) => !emitted.has(key))
+        .map(([, rawLine]) => rawLine);
+      const preservedLines = [...appended, ...sectionExtras];
+      if (preservedLines.length) {
+        nextLines.push('', '# Preserved user config', ...preservedLines);
+      }
+      return nextLines.join('\n');
+    })
+    .join('\n');
+}
+
+function parseGeneratedBlocks(config: string): GeneratedBlock[] {
+  const blocks: GeneratedBlock[] = [];
+  let current: GeneratedBlock = { name: null, lines: [] };
+  config.split('\n').forEach((line) => {
+    const match = line.trim().match(/^\[([^\]]+)]$/);
+    if (match) {
+      if (current.lines.length) blocks.push(current);
+      current = { name: match[1].trim(), lines: [line] };
+      return;
+    }
+    current.lines.push(line);
+  });
+  if (current.lines.length) blocks.push(current);
+  return blocks;
+}
+
+function lineKey(line: string): string | null {
+  const trimmed = line.trim();
+  if (!trimmed) return null;
+  const candidate = trimmed.startsWith('#') ? trimmed.replace(/^#\s*/, '') : trimmed;
+  const match = candidate.match(/^([A-Za-z0-9_]+)\s*:/);
+  return match ? match[1].toLowerCase() : null;
 }

@@ -133,7 +133,6 @@ export function createDefaultState(): AppState {
       testMode: false,
       dimensionMenuOpen: false,
       dimensionLayers: createDefaultDimensionLayers(),
-      sideViewEnabled: true,
       outputCollapsed: false,
       macroOutputCollapsed: false,
       kinematicsPanelCollapsed: false,
@@ -148,6 +147,8 @@ export function createDefaultState(): AppState {
       printerCfgDraft: '',
       printerCfgDirty: false,
       unmanagedConfigText: '',
+      configLineOverrides: {},
+      configExtraLines: {},
       printerCfgDiagnostics: []
     }
   };

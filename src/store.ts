@@ -46,8 +46,8 @@ export function mergeStoredState(raw: unknown): AppState {
   const toolhead = normalizeToolhead(candidate.toolhead, defaults.toolhead);
   const macros = Array.isArray(candidate.macros) ? normalizeMacros(candidate.macros, toolhead) : defaults.macros;
   const activeMacroId = candidate.activeMacroId && macros.some((macro) => macro.id === candidate.activeMacroId) ? candidate.activeMacroId : macros[0]?.id ?? '';
-  const candidateUi = candidate.ui && typeof candidate.ui === 'object' ? candidate.ui as Partial<AppState['ui']> & { showDimensions?: unknown; sideViewAxis?: unknown } : {};
-  const { showDimensions: legacyShowDimensions, sideViewAxis: _legacySideViewAxis, ...storedUi } = candidateUi;
+  const candidateUi = candidate.ui && typeof candidate.ui === 'object' ? candidate.ui as Partial<AppState['ui']> & { showDimensions?: unknown; sideViewAxis?: unknown; sideViewEnabled?: unknown } : {};
+  const { showDimensions: legacyShowDimensions, sideViewAxis: _legacySideViewAxis, sideViewEnabled: _legacySideViewEnabled, ...storedUi } = candidateUi;
   const merged: AppState = {
     ...defaults,
     ...candidate,
@@ -57,7 +57,8 @@ export function mergeStoredState(raw: unknown): AppState {
       ...storedUi,
       dimensionMenuOpen: false,
       dimensionLayers: normalizeDimensionLayers(storedUi.dimensionLayers, legacyShowDimensions === true),
-      sideViewEnabled: typeof storedUi.sideViewEnabled === 'boolean' ? storedUi.sideViewEnabled : defaults.ui.sideViewEnabled
+      configLineOverrides: normalizeNestedStringRecord(storedUi.configLineOverrides),
+      configExtraLines: normalizeStringArrayRecord(storedUi.configExtraLines)
     },
     toolhead,
     screws: Array.isArray(candidate.screws) ? candidate.screws : defaults.screws,
@@ -73,6 +74,29 @@ export function mergeStoredState(raw: unknown): AppState {
   merged.macroPreview = activeMacro ? simulateMacro(activeMacro, merged) : defaults.macroPreview;
   if (!Number.isFinite(Number(merged.macroRun.segmentProgress))) merged.macroRun.segmentProgress = 0;
   return merged;
+}
+
+function normalizeNestedStringRecord(value: unknown): Record<string, Record<string, string>> {
+  if (!value || typeof value !== 'object') return {};
+  return Object.entries(value as Record<string, unknown>).reduce<Record<string, Record<string, string>>>((sections, [section, entries]) => {
+    if (!entries || typeof entries !== 'object') return sections;
+    const normalizedEntries = Object.entries(entries as Record<string, unknown>).reduce<Record<string, string>>((acc, [key, rawLine]) => {
+      if (typeof rawLine === 'string') acc[key.toLowerCase()] = rawLine;
+      return acc;
+    }, {});
+    if (Object.keys(normalizedEntries).length) sections[section.toLowerCase()] = normalizedEntries;
+    return sections;
+  }, {});
+}
+
+function normalizeStringArrayRecord(value: unknown): Record<string, string[]> {
+  if (!value || typeof value !== 'object') return {};
+  return Object.entries(value as Record<string, unknown>).reduce<Record<string, string[]>>((sections, [section, lines]) => {
+    if (!Array.isArray(lines)) return sections;
+    const normalizedLines = lines.filter((line): line is string => typeof line === 'string');
+    if (normalizedLines.length) sections[section.toLowerCase()] = normalizedLines;
+    return sections;
+  }, {});
 }
 
 function normalizeToolhead(value: unknown, fallback: Toolhead): Toolhead {

@@ -106,7 +106,6 @@ export interface UiState {
   testMode: boolean;
   dimensionMenuOpen: boolean;
   dimensionLayers: DimensionLayers;
-  sideViewEnabled: boolean;
   outputCollapsed: boolean;
   macroOutputCollapsed: boolean;
   kinematicsPanelCollapsed: boolean;
@@ -121,6 +120,8 @@ export interface UiState {
   printerCfgDraft: string;
   printerCfgDirty: boolean;
   unmanagedConfigText: string;
+  configLineOverrides: Record<string, Record<string, string>>;
+  configExtraLines: Record<string, string[]>;
   printerCfgDiagnostics: Diagnostic[];
 }
 

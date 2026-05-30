@@ -7,6 +7,7 @@ import { drawScene } from '../renderers/renderer';
 import { drawSideView } from '../renderers/sideViewRenderer';
 import { screenToWorld } from '../renderers/canvasPrimitives';
 import { isInsideToolhead } from '../renderers/shared';
+import { viewerSnapshot } from '../renderers/viewerSnapshot';
 import type { AppState, DimensionLayerId, DimensionLayers } from '../kinematics/types';
 import type { CanvasMap, DrawContext } from '../renderers/canvasTypes';
 
@@ -40,16 +41,7 @@ export default function VisualizerCanvas(props: VisualizerCanvasProps) {
   });
 
   createEffect(() => {
-    JSON.stringify(props.state.values);
-    JSON.stringify(props.state.screws);
-    JSON.stringify(props.state.winches);
-    JSON.stringify(props.state.carriages);
-    JSON.stringify(props.state.genericSteppers);
-    JSON.stringify(props.state.toolhead);
-    JSON.stringify(props.state.ui);
-    JSON.stringify(props.state.macroPreview);
-    props.state.macroRun.stepIndex;
-    props.state.macroRun.segmentProgress;
+    viewerSnapshot(props.state);
     redraw();
   });
 

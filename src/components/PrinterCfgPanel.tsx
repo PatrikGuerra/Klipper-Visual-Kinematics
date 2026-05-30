@@ -1,6 +1,7 @@
 import { Show } from 'solid-js';
 import { Copy, Download, FileText, PenLine, ShieldAlert } from 'lucide-solid';
 import { updateMutable } from '../store';
+import { getPrinterCfgText } from '../kinematics/configParser';
 import Button from '../lib/components/ui/Button';
 import Badge from '../lib/components/ui/Badge';
 import type { AppState } from '../kinematics/types';
@@ -11,8 +12,9 @@ interface PrinterCfgPanelProps {
 }
 
 export default function PrinterCfgPanel(props: PrinterCfgPanelProps) {
-  const sectionCount = () => (props.generatedConfig.match(/^\[[^\]]+\]/gm) ?? []).length;
-  const lineCount = () => (props.generatedConfig ? props.generatedConfig.split(/\r?\n/).length : 0);
+  const cfgText = () => getPrinterCfgText(props.state, props.generatedConfig);
+  const sectionCount = () => (cfgText().match(/^\[[^\]]+\]/gm) ?? []).length;
+  const lineCount = () => (cfgText() ? cfgText().split(/\r?\n/).length : 0);
   const status = () => (props.state.ui.printerCfgDirty ? 'Edited draft' : props.state.ui.printerCfgDiagnostics.length ? 'Parse warnings' : 'Synced');
 
   function openEditor(): void {
@@ -23,7 +25,7 @@ export default function PrinterCfgPanel(props: PrinterCfgPanelProps) {
   }
 
   async function copyConfig(): Promise<void> {
-    const text = props.state.ui.printerCfgDirty ? props.state.ui.printerCfgDraft : props.generatedConfig;
+    const text = cfgText();
     if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(text);
     else {
       const area = document.createElement('textarea');
@@ -36,7 +38,7 @@ export default function PrinterCfgPanel(props: PrinterCfgPanelProps) {
   }
 
   function downloadConfig(): void {
-    const text = props.state.ui.printerCfgDirty ? props.state.ui.printerCfgDraft : props.generatedConfig;
+    const text = cfgText();
     const blob = new Blob([text], { type: 'text/plain' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
@@ -71,7 +73,7 @@ export default function PrinterCfgPanel(props: PrinterCfgPanelProps) {
         <span>Edits still happen in the modal, with supported sections applied back to the visual state.</span>
       </div>
 
-      <pre class="cfg-mini-preview">{props.generatedConfig}</pre>
+      <pre class="cfg-mini-preview">{cfgText()}</pre>
     </section>
   );
 }

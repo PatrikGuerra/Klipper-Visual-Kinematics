@@ -1,5 +1,5 @@
 import { createEffect, createMemo, onCleanup, Show, For } from 'solid-js';
-import { Copy, Eye, Pause, Play, Plus, RotateCcw, Sparkles, SquareParking, StepForward, Trash2 } from 'lucide-solid';
+import { CircleHelp, Copy, Eye, Pause, Play, Plus, RotateCcw, Sparkles, SquareParking, StepForward, Trash2 } from 'lucide-solid';
 import { updateActiveMacro, updateMutable } from '../store';
 import { createBlankMacro, createNozzleCleaningMacro, createParkToolheadMacro } from '../macros/presets';
 import { simulateMacro } from '../macros/simulator';
@@ -180,6 +180,12 @@ export default function MacroPanel(props: MacroPanelProps) {
     });
   }
 
+  function setSimulationStartMode(mode: 'current' | 'manual'): void {
+    updateActive((item) => {
+      item.simulationStartMode = mode;
+    });
+  }
+
   function preview(): void {
     updateMutable((draft) => {
       const macro = draft.macros.find((item) => item.id === draft.activeMacroId);
@@ -298,11 +304,19 @@ export default function MacroPanel(props: MacroPanelProps) {
                     <input id="macro-name" type="text" value={macro().name} onInput={(event) => updateActive((item) => (item.name = event.currentTarget.value))} />
                   </div>
                   <div class="field">
-                    <label for="macro-start-mode">Simulation start</label>
-                    <select id="macro-start-mode" value={macro().simulationStartMode} onChange={(event) => updateActive((item) => (item.simulationStartMode = event.currentTarget.value === 'manual' ? 'manual' : 'current'))}>
-                      <option value="current">Current toolhead</option>
-                      <option value="manual">Manual XYZ</option>
-                    </select>
+                    <span class="field-label">Simulation start</span>
+                    <div class="sim-start-options" role="radiogroup" aria-label="Simulation start">
+                      <label classList={{ active: macro().simulationStartMode === 'current' }} class="sim-start-option">
+                        <input type="radio" name={`macro-start-mode-${macro().id}`} checked={macro().simulationStartMode === 'current'} onChange={() => setSimulationStartMode('current')} />
+                        <span>Current toolhead</span>
+                        <span class="help-icon" title="Starts the macro preview from the current visual toolhead position. Moving the head updates the next preview start."><CircleHelp size={13} /></span>
+                      </label>
+                      <label classList={{ active: macro().simulationStartMode === 'manual' }} class="sim-start-option">
+                        <input type="radio" name={`macro-start-mode-${macro().id}`} checked={macro().simulationStartMode === 'manual'} onChange={() => setSimulationStartMode('manual')} />
+                        <span>Manual XYZ</span>
+                        <span class="help-icon" title="Starts the macro preview from the fixed X/Y/Z values below, independent of the current toolhead position."><CircleHelp size={13} /></span>
+                      </label>
+                    </div>
                   </div>
                   <div class="field full">
                     <label for="macro-description">Description</label>

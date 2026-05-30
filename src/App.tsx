@@ -23,8 +23,6 @@ export default function App() {
   const motorRows = createMemo(() => getMotorReadout(appState));
   const macroConfig = createMemo(() => generateMacrosConfig(appState.macros));
   const generatedConfig = createMemo(() => appendUnmanagedConfig([generateConfig(appState), macroConfig()].filter(Boolean).join('\n\n'), String(appState.ui.unmanagedConfigText || '')));
-  const errorCount = createMemo(() => diagnostics().filter((diagnostic) => diagnostic.type === 'error').length);
-  const warningCount = createMemo(() => diagnostics().filter((diagnostic) => diagnostic.type === 'warning').length);
   const kinematicsWidth = createMemo(() => panelWidth(appState.ui.kinematicsPanelCollapsed, Number(appState.ui.kinematicsPanelWidth), 360, 280, 760));
   const macrosWidth = createMemo(() => panelWidth(appState.ui.macrosPanelCollapsed, Number(appState.ui.macrosPanelWidth), 430, 320, 860));
   const printerCfgWidth = createMemo(() => panelWidth(appState.ui.printerCfgPanelCollapsed, Number(appState.ui.printerCfgPanelWidth), 240, 180, 420));
@@ -100,7 +98,6 @@ export default function App() {
             <p>Visualize motion models, validate reach, and generate positioning config sections.</p>
           </div>
         </div>
-        <MotorReadout rows={motorRows()} compact />
       </header>
 
       <main
@@ -156,11 +153,6 @@ export default function App() {
         </aside>
 
         <section class="workspace">
-          <div class="status-row">
-            <span classList={{ error: errorCount() > 0, warn: errorCount() === 0 && warningCount() > 0 }} class="pill">
-              {errorCount() > 0 ? `${errorCount()} error(s)` : warningCount() > 0 ? `${warningCount()} warning(s)` : 'Ready'}
-            </span>
-          </div>
           <VisualizerCanvas state={appState} />
           <div class="lower-grid">
             <MotorReadout rows={motorRows()} />
