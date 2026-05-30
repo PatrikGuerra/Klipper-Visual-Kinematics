@@ -118,6 +118,7 @@ export interface UiState {
   printerCfgPanelWidth: number;
   printerCfgModalOpen: boolean;
   shareModalOpen: boolean;
+  aboutModalOpen: boolean;
   printerCfgDraft: string;
   printerCfgDirty: boolean;
   unmanagedConfigText: string;
