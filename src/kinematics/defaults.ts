@@ -144,6 +144,7 @@ export function createDefaultState(): AppState {
       printerCfgPanelCollapsed: false,
       printerCfgPanelWidth: 240,
       printerCfgModalOpen: false,
+      shareModalOpen: false,
       printerCfgDraft: '',
       printerCfgDirty: false,
       unmanagedConfigText: '',

@@ -29,6 +29,8 @@ export default function VisualizerCanvas(props: VisualizerCanvasProps) {
   let headGrabOffsetY = 0;
   let headDragStartX = 0;
   let headDragStartY = 0;
+  let redrawFrame: number | undefined;
+  let resizeObserver: ResizeObserver | undefined;
 
   const kin = () => kinematicById(props.state.values.kinematics);
   const hasActiveDimensions = createMemo(() => areDimensionLayersActive(props.state.ui.dimensionLayers));
@@ -37,7 +39,16 @@ export default function VisualizerCanvas(props: VisualizerCanvasProps) {
     redraw();
     const resize = () => redraw();
     window.addEventListener('resize', resize);
-    onCleanup(() => window.removeEventListener('resize', resize));
+    if (typeof ResizeObserver !== 'undefined') {
+      resizeObserver = new ResizeObserver(() => redraw());
+      if (canvas.parentElement) resizeObserver.observe(canvas.parentElement);
+      if (sideCanvas?.parentElement) resizeObserver.observe(sideCanvas.parentElement);
+    }
+    onCleanup(() => {
+      window.removeEventListener('resize', resize);
+      resizeObserver?.disconnect();
+      if (redrawFrame) window.cancelAnimationFrame(redrawFrame);
+    });
   });
 
   createEffect(() => {
@@ -47,7 +58,9 @@ export default function VisualizerCanvas(props: VisualizerCanvasProps) {
 
   function redraw(): void {
     if (!canvas) return;
-    requestAnimationFrame(() => {
+    if (redrawFrame) window.cancelAnimationFrame(redrawFrame);
+    redrawFrame = window.requestAnimationFrame(() => {
+      redrawFrame = undefined;
       const result = drawScene(canvas, props.state);
       if (!result) return;
       map = result.map;

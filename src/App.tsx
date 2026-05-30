@@ -1,5 +1,6 @@
 import { createMemo, onCleanup } from 'solid-js';
-import { appState, persistAppState, updateMutable } from './store';
+import { Share2 } from 'lucide-solid';
+import { appState, persistAppState, syncShareUrl, updateMutable } from './store';
 import { validateState } from './kinematics/validators';
 import { getMotorReadout } from './kinematics/transforms';
 import { generateConfig } from './kinematics/configGenerator';
@@ -13,11 +14,14 @@ import MotorReadout from './components/MotorReadout';
 import MacroPanel from './components/MacroPanel';
 import PrinterCfgPanel from './components/PrinterCfgPanel';
 import PrinterCfgModal from './components/PrinterCfgModal';
+import ShareModal from './components/ShareModal';
+import Button from './lib/components/ui/Button';
 
 type PanelId = 'kinematics' | 'macros' | 'printerCfg';
 
 export default function App() {
   persistAppState();
+  syncShareUrl();
 
   const diagnostics = createMemo(() => [...validateState(appState), ...validateMacros(appState)]);
   const motorRows = createMemo(() => getMotorReadout(appState));
@@ -94,7 +98,10 @@ export default function App() {
         <div class="header-brand">
           <div class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></div>
           <div>
-            <h1>Klipper Visual Kinematics</h1>
+            <div class="header-title-row">
+              <h1>Klipper Visual Kinematics</h1>
+              <Button variant="outline" size="sm" onClick={() => updateMutable((draft) => (draft.ui.shareModalOpen = true))}><Share2 size={14} />Share</Button>
+            </div>
             <p>Visualize motion models, validate reach, and generate positioning config sections.</p>
           </div>
         </div>
@@ -162,6 +169,7 @@ export default function App() {
       </main>
 
       <PrinterCfgModal state={appState} generatedConfig={generatedConfig()} />
+      <ShareModal state={appState} />
     </>
   );
 }

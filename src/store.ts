@@ -4,6 +4,7 @@ import { createDefaultState, specificDefaults, commonDefaults } from './kinemati
 import { kinematicById } from './kinematics/catalog';
 import { normalizeDimensionLayers } from './kinematics/dimensionLayers';
 import { simulateMacro } from './macros/simulator';
+import { applyPortableShareState, createPortableShareState, decodeShareState, encodeShareState, readShareHash, writeShareHash } from './share/shareState';
 import type { AppState, FieldValue, MacroDefinition, Toolhead } from './kinematics/types';
 
 const STORAGE_KEY = 'klipper-visual-kinematics-solid-v1';
@@ -131,7 +132,7 @@ function refreshCurrentMacroPreview(state: AppState): void {
   state.macroRun = { ...state.macroRun, stepIndex: -1, segmentProgress: 0 };
 }
 
-function loadState(): AppState {
+function loadStoredState(): AppState {
   if (typeof localStorage === 'undefined') return createDefaultState();
   try {
     const raw = localStorage.getItem(STORAGE_KEY) ?? LEGACY_KEYS.map((key) => localStorage.getItem(key)).find(Boolean);
@@ -142,9 +143,29 @@ function loadState(): AppState {
   }
 }
 
+function loadState(): AppState {
+  const sharePayload = readShareHash();
+  if (sharePayload) {
+    const sharedState = createDefaultState();
+    try {
+      applyPortableShareState(decodeShareState(sharePayload), sharedState);
+      return sharedState;
+    } catch (error) {
+      const fallback = loadStoredState();
+      fallback.ui.printerCfgDiagnostics = [
+        ...fallback.ui.printerCfgDiagnostics,
+        { type: 'warning', message: error instanceof Error ? error.message : 'Invalid share URL payload.', field: 'share' }
+      ];
+      return fallback;
+    }
+  }
+  return loadStoredState();
+}
+
 export const [appState, setAppState] = createStore<AppState>(loadState());
 
 let storeTimer: number | undefined;
+let shareTimer: number | undefined;
 
 export function persistAppState(): void {
   createEffect(() => {
@@ -154,6 +175,17 @@ export function persistAppState(): void {
     storeTimer = window.setTimeout(() => {
       localStorage.setItem(STORAGE_KEY, serialized);
     }, 120);
+  });
+}
+
+export function syncShareUrl(): void {
+  createEffect(() => {
+    if (typeof window === 'undefined') return;
+    createPortableShareState(appState);
+    window.clearTimeout(shareTimer);
+    shareTimer = window.setTimeout(() => {
+      writeShareHash(encodeShareState(appState));
+    }, 450);
   });
 }
 
