@@ -51,7 +51,7 @@ body {
 
 button, input, select { font: inherit; }
 
-button:not(.btn):not(.tab):not(.modal-close-button) {
+button:not(.btn):not(.tab):not(.modal-close-button):not(.dock-panel-header-button):not(.dock-panel-rail) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -70,14 +70,14 @@ button:not(.btn):not(.tab):not(.modal-close-button) {
   transition: none;
 }
 
-button:not(.btn):not(.tab):not(.modal-close-button):hover {
+button:not(.btn):not(.tab):not(.modal-close-button):not(.dock-panel-header-button):not(.dock-panel-rail):hover {
   border-color: rgba(37, 99, 235, 0.36);
   background: #f8fbff;
   box-shadow: 0 3px 8px rgba(15, 23, 42, 0.09);
   transform: none;
 }
 
-button:not(.btn):not(.tab):not(.modal-close-button):active {
+button:not(.btn):not(.tab):not(.modal-close-button):not(.dock-panel-header-button):not(.dock-panel-rail):active {
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
   transform: none;
 }
@@ -260,7 +260,7 @@ label {
   overflow-y: visible;
 }
 
-.dock-panel-header {
+.dock-panel-header-button {
   width: 100%;
   min-height: 42px;
   display: flex;
@@ -280,7 +280,7 @@ label {
   text-transform: uppercase;
 }
 
-.dock-panel-header:hover {
+.dock-panel-header-button:hover {
   border-color: transparent;
   border-bottom-color: var(--border);
   background: var(--panel-2);
@@ -289,7 +289,7 @@ label {
   transform: none;
 }
 
-.dock-panel-header:active {
+.dock-panel-header-button:active {
   box-shadow: none;
   transform: none;
 }
@@ -305,11 +305,11 @@ label {
   min-width: 0;
   justify-content: flex-start;
   border: 0;
-  border-radius: 5px;
+  border-radius: 0;
   background: transparent;
   box-shadow: none;
   color: inherit;
-  padding: 4px 6px;
+  padding: 0;
   font: inherit;
   font-weight: inherit;
   letter-spacing: inherit;
@@ -317,10 +317,10 @@ label {
   pointer-events: none;
 }
 
-.dock-panel-header:hover .dock-panel-title,
+.dock-panel-header-button:hover .dock-panel-title,
 .dock-panel-title:hover {
   border-color: transparent;
-  background: rgba(37, 99, 235, 0.07);
+  background: transparent;
   box-shadow: none;
   color: var(--accent);
   transform: none;
@@ -330,7 +330,7 @@ label {
   align-items: stretch;
 }
 
-.dock-panel.collapsed .dock-panel-header {
+.dock-panel.collapsed .dock-panel-header-button {
   display: none;
 }
 

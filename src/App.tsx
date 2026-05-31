@@ -41,8 +41,8 @@ export default function App() {
           <div>
             <div class="header-title-row">
               <h1>Klipper Visual Kinematics</h1>
-              <Button variant="outline" size="sm" onClick={() => updateMutable((draft) => (draft.ui.aboutModalOpen = true))}><Info size={14} />About</Button>
-              <Button variant="outline" size="sm" onClick={() => updateMutable((draft) => (draft.ui.shareModalOpen = true))}><Link size={14} />Share</Button>
+              <Button variant="secondary" size="sm" onClick={() => updateMutable((draft) => (draft.ui.aboutModalOpen = true))}><Info size={14} />About</Button>
+              <Button variant="success" size="sm" onClick={() => updateMutable((draft) => (draft.ui.shareModalOpen = true))}><Link size={14} />Share</Button>
             </div>
             <p>Visualize motion models, validate reach, and generate positioning config sections.</p>
           </div>

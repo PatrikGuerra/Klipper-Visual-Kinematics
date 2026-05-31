@@ -1,4 +1,5 @@
 import { Show, type JSX } from 'solid-js';
+import DockPanelHeader from './DockPanelHeader';
 import type { DockPanelId, DockPanelState } from '../kinematics/types';
 
 interface DockPanelProps {
@@ -23,9 +24,7 @@ export default function DockPanel(props: DockPanelProps) {
         when={!props.state.collapsed}
         fallback={<button type="button" class="dock-panel-rail" aria-expanded={false} onClick={() => props.onToggle(props.id)}>{props.title}</button>}
       >
-        <button type="button" class="dock-panel-header" aria-expanded={true} onClick={() => props.onToggle(props.id)}>
-          <span class="dock-panel-title">{props.title}</span>
-        </button>
+        <DockPanelHeader id={props.id} title={props.title} expanded onToggle={props.onToggle} />
         <div class="dock-panel-content-row">
           <div class="dock-panel-body">{props.children}</div>
           <div
