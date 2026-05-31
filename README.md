@@ -2,6 +2,8 @@
 
 A visual configuration helper for Klipper printer geometry, motion limits, macro paths, and generated `printer.cfg` sections.
 
+**Open the app:** https://patrikguerra.github.io/Klipper-Visual-Kinematics/
+
 The goal of this project is to make printer positioning easier to understand before touching a real machine: edit dimensions, inspect the usable bed, preview toolhead movement, simulate simple macros, and export a starting `printer.cfg`.
 
 > [!IMPORTANT]
