@@ -121,4 +121,6 @@ When reporting issues, please include:
 
 ## License
 
-No license file is included yet. Add a license before treating this repository as open-source software for redistribution.
+This project is released under the MIT License.
+
+You are free to use, copy, modify, merge, publish, distribute, sublicense, and sell copies of the software, as long as the copyright notice and license text are preserved in copies or substantial portions of the software.
