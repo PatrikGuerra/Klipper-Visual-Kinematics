@@ -60,14 +60,14 @@ export default function ScrewsList(props: ScrewsListProps) {
     <For each={entries()}>
       {({ value: screw, index }) => (
         <div classList={{ filtered: visible() }} class="list-row screw-row">
-          <Show when={matches('X', 'screw_x')}><div><label>X<input type="number" value={screwToInput(screw, props.state.values).x} onInput={(event) => updateCoordinate(index, 'x', event.currentTarget.value)} /></label></div></Show>
-          <Show when={matches('Y', 'screw_y')}><div><label>Y<input type="number" value={screwToInput(screw, props.state.values).y} onInput={(event) => updateCoordinate(index, 'y', event.currentTarget.value)} /></label></div></Show>
-          <Show when={matches('Name', 'screw_name')}><div><label>Name<input type="text" value={screw.name} onInput={(event) => updateName(index, event.currentTarget.value)} /></label></div></Show>
+          <Show when={matches('X', 'screw_x')}><div><label>X<input class="input input-bordered input-sm w-full" type="number" value={screwToInput(screw, props.state.values).x} onInput={(event) => updateCoordinate(index, 'x', event.currentTarget.value)} /></label></div></Show>
+          <Show when={matches('Y', 'screw_y')}><div><label>Y<input class="input input-bordered input-sm w-full" type="number" value={screwToInput(screw, props.state.values).y} onInput={(event) => updateCoordinate(index, 'y', event.currentTarget.value)} /></label></div></Show>
+          <Show when={matches('Name', 'screw_name')}><div><label>Name<input class="input input-bordered input-sm w-full" type="text" value={screw.name} onInput={(event) => updateName(index, event.currentTarget.value)} /></label></div></Show>
           <Show when={!visible()}>
             <div class="row-icon-actions">
-              <button type="button" class="icon-button" title="Move screw up" aria-label="Move screw up" disabled={index === 0} onClick={() => move(index, -1)}><ArrowUp size={14} /></button>
-              <button type="button" class="icon-button" title="Move screw down" aria-label="Move screw down" disabled={index === props.state.screws.length - 1} onClick={() => move(index, 1)}><ArrowDown size={14} /></button>
-              <button type="button" class="danger icon-button" title="Remove screw" aria-label="Remove screw" onClick={() => remove(index)}><Trash2 size={14} /></button>
+              <button type="button" class="btn btn-square btn-sm" title="Move screw up" aria-label="Move screw up" disabled={index === 0} onClick={() => move(index, -1)}><ArrowUp size={14} /></button>
+              <button type="button" class="btn btn-square btn-sm" title="Move screw down" aria-label="Move screw down" disabled={index === props.state.screws.length - 1} onClick={() => move(index, 1)}><ArrowDown size={14} /></button>
+              <button type="button" class="btn btn-error btn-square btn-sm" title="Remove screw" aria-label="Remove screw" onClick={() => remove(index)}><Trash2 size={14} /></button>
             </div>
           </Show>
         </div>

@@ -9,14 +9,23 @@ interface BadgeProps {
 
 export default function Badge(props: BadgeProps): JSX.Element {
   const variant = () => props.variant ?? 'default';
+  const variantClass = () => {
+    switch (variant()) {
+      case 'warning':
+        return 'badge-warning';
+      case 'destructive':
+        return 'badge-error';
+      case 'muted':
+        return 'badge-neutral badge-outline';
+      default:
+        return 'badge-primary';
+    }
+  };
   return (
     <span
       class={cn(
-        'inline-flex min-h-6 items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold',
-        variant() === 'default' && 'border-accent/40 bg-accent/15 text-accent',
-        variant() === 'warning' && 'border-yellow-500/40 bg-yellow-500/10 text-yellow-700',
-        variant() === 'destructive' && 'border-destructive/35 bg-destructive/10 text-red-700',
-        variant() === 'muted' && 'border-border bg-muted text-muted-foreground',
+        'badge badge-sm',
+        variantClass(),
         props.className
       )}
     >

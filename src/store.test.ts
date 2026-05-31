@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { areDimensionLayersActive, createDefaultDimensionLayers } from './kinematics/dimensionLayers';
 import { createDefaultState } from './kinematics/defaults';
-import { appState, mergeStoredState, patchUi, resetState, setToolhead, setValue, updateActiveMacro } from './store';
+import { appState, mergeStoredState, patchUi, resetState, resizeDockPanel, setToolhead, setValue, toggleDockPanel, updateActiveMacro, updateMutable } from './store';
 
 describe('solid app store actions', () => {
   beforeEach(() => {
@@ -53,6 +53,32 @@ describe('solid app store actions', () => {
     expect(areDimensionLayersActive(state.ui.dimensionLayers)).toBe(false);
   });
 
+  it('defaults dock panel state', () => {
+    const state = createDefaultState();
+
+    expect(state.ui.dockPanels.kinematics).toEqual({ collapsed: false, width: 360 });
+    expect(state.ui.dockPanels.macros).toEqual({ collapsed: false, width: 430 });
+    expect(state.ui.dockPanels.printerCfg).toEqual({ collapsed: false, width: 240 });
+  });
+
+  it('resets legacy panel layout while loading stored state', () => {
+    const state = mergeStoredState({
+      values: { kinematics: 'cartesian' },
+      ui: {
+        kinematicsPanelCollapsed: true,
+        kinematicsPanelWidth: 700,
+        macrosPanelCollapsed: true,
+        macrosPanelWidth: 800,
+        printerCfgPanelCollapsed: true,
+        printerCfgPanelWidth: 400
+      }
+    });
+
+    expect(state.ui.dockPanels).toEqual(createDefaultState().ui.dockPanels);
+    expect('kinematicsPanelCollapsed' in (state.ui as unknown as Record<string, unknown>)).toBe(false);
+    expect('macrosPanelWidth' in (state.ui as unknown as Record<string, unknown>)).toBe(false);
+  });
+
   it('migrates legacy showDimensions into the matching dimension layers', () => {
     const state = mergeStoredState({
       values: { kinematics: 'cartesian' },
@@ -82,6 +108,26 @@ describe('solid app store actions', () => {
 
     layers.probeOffset = true;
     expect(areDimensionLayersActive(layers)).toBe(true);
+  });
+
+  it('toggles and resizes dock panels independently', () => {
+    toggleDockPanel('kinematics');
+    expect(appState.ui.dockPanels.kinematics.collapsed).toBe(true);
+    expect(appState.ui.dockPanels.macros.collapsed).toBe(false);
+
+    resizeDockPanel('kinematics', 9999);
+    expect(appState.ui.dockPanels.kinematics).toEqual({ collapsed: false, width: 760 });
+  });
+
+  it('stops macro playback when the macro dock panel collapses', () => {
+    updateMutable((state) => {
+      state.macroRun.playing = true;
+    });
+
+    toggleDockPanel('macros');
+
+    expect(appState.ui.dockPanels.macros.collapsed).toBe(true);
+    expect(appState.macroRun.playing).toBe(false);
   });
 
   it('ignores legacy macro enabled flags while loading stored state', () => {

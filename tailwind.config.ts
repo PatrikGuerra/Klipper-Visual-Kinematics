@@ -1,4 +1,12 @@
+import daisyui from 'daisyui';
 import type { Config } from 'tailwindcss';
+
+type DaisyConfig = Config & {
+  daisyui?: {
+    themes?: Array<Record<string, Record<string, string | boolean>>>;
+    darkTheme?: string;
+  };
+};
 
 export default {
   darkMode: ['class'],
@@ -43,5 +51,38 @@ export default {
       }
     }
   },
-  plugins: []
-} satisfies Config;
+  daisyui: {
+    darkTheme: 'klipper',
+    themes: [
+      {
+        klipper: {
+          primary: '#2563eb',
+          'primary-content': '#ffffff',
+          secondary: '#e2e8f0',
+          'secondary-content': '#172033',
+          accent: '#059669',
+          'accent-content': '#ffffff',
+          neutral: '#243047',
+          'neutral-content': '#ffffff',
+          'base-100': '#ffffff',
+          'base-200': '#f4f7fb',
+          'base-300': '#d7e0ea',
+          'base-content': '#172033',
+          info: '#0ea5e9',
+          'info-content': '#ffffff',
+          success: '#059669',
+          'success-content': '#ffffff',
+          warning: '#d97706',
+          'warning-content': '#172033',
+          error: '#dc2626',
+          'error-content': '#ffffff',
+          '--rounded-box': '8px',
+          '--rounded-btn': '6px',
+          '--rounded-badge': '999px',
+          '--border-btn': '1px'
+        }
+      }
+    ]
+  },
+  plugins: [daisyui]
+} satisfies DaisyConfig;

@@ -14,10 +14,10 @@ export default function KinematicsSelectorPanel(props: KinematicsSelectorPanelPr
     <section class="panel">
       <div class="panel-title">
         <span>Kinematics</span>
-        <button type="button" class="warning" onClick={resetState}><RotateCcw size={14} />Reset</button>
+        <button type="button" class="btn btn-warning btn-sm" onClick={resetState}><RotateCcw size={14} />Reset</button>
       </div>
       <label for="kinematics">Motion model</label>
-      <select id="kinematics" value={props.selectedId} onChange={(event) => setValue('kinematics', event.currentTarget.value)}>
+      <select id="kinematics" class="select select-bordered select-sm w-full" value={props.selectedId} onChange={(event) => setValue('kinematics', event.currentTarget.value)}>
         <For each={kinematicsCatalog}>{(option) => <option value={option.id}>{option.name} ({option.id})</option>}</For>
       </select>
       <p class="help">{props.kin.note}</p>

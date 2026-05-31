@@ -51,13 +51,13 @@ export default function ScrewsPanel(props: ScrewsPanelProps) {
         tooltip={tooltip()}
         onChange={(checked) => setValue('screwsEnabled', checked)}
       >
-        <Show when={!props.searchTerm}><button type="button" class="success" onClick={props.onAddScrew}><Plus size={14} />Add</button></Show>
+        <Show when={!props.searchTerm}><button type="button" class="btn btn-success btn-sm" onClick={props.onAddScrew}><Plus size={14} />Add</button></Show>
       </SectionToggleTitle>
       <div classList={{ 'disabled-block': disabled() || !props.state.values.screwsEnabled }}>
         <Show when={!props.searchTerm || props.showReference}>
           <div class="screw-reference-control">
             <label for="screw-reference">Input reference</label>
-            <select id="screw-reference" value={normalizeScrewReference(props.state.values.screw_reference)} onChange={(event) => setValue('screw_reference', event.currentTarget.value)}>
+            <select id="screw-reference" class="select select-bordered select-sm w-full" value={normalizeScrewReference(props.state.values.screw_reference)} onChange={(event) => setValue('screw_reference', event.currentTarget.value)}>
               <For each={screwReferenceOptions}>{(option) => <option value={option.id}>{option.label}</option>}</For>
             </select>
             <p class="help">{screwReferenceOption().help} The generated .cfg is converted to Klipper nozzle/probe coordinates.</p>
@@ -68,7 +68,7 @@ export default function ScrewsPanel(props: ScrewsPanelProps) {
             <label for="screw-thread">Screw thread</label>
             <input
               id="screw-thread"
-              class={fieldClass('screw_thread')}
+              class={`input input-bordered input-sm w-full ${fieldClass('screw_thread')}`}
               title={titleFor('screw_thread')}
               type="text"
               list="screw-thread-options"

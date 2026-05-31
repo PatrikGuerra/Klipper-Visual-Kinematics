@@ -37,10 +37,10 @@ export default function GenericSteppersList(props: GenericSteppersListProps) {
     <For each={entries()}>
       {({ value: stepper, index }) => (
         <div classList={{ filtered: visible() }} class="list-row stepper-row">
-          <Show when={matches('Name', 'stepper_name')}><div><label>Name<input type="text" value={stepper.name} onInput={(event) => update(index, 'name', event.currentTarget.value)} /></label></div></Show>
-          <Show when={matches('Carriages', 'carriages')}><div><label>Carriages<input type="text" value={stepper.carriages} onInput={(event) => update(index, 'carriages', event.currentTarget.value)} /></label></div></Show>
-          <Show when={matches('Equation', 'equation')}><div><label>Equation<input type="text" value={stepper.equation} onInput={(event) => update(index, 'equation', event.currentTarget.value)} /></label></div></Show>
-          <Show when={!visible()}><button type="button" class="danger" onClick={() => remove(index)}><Trash2 size={14} />Remove</button></Show>
+          <Show when={matches('Name', 'stepper_name')}><div><label>Name<input class="input input-bordered input-sm w-full" type="text" value={stepper.name} onInput={(event) => update(index, 'name', event.currentTarget.value)} /></label></div></Show>
+          <Show when={matches('Carriages', 'carriages')}><div><label>Carriages<input class="input input-bordered input-sm w-full" type="text" value={stepper.carriages} onInput={(event) => update(index, 'carriages', event.currentTarget.value)} /></label></div></Show>
+          <Show when={matches('Equation', 'equation')}><div><label>Equation<input class="input input-bordered input-sm w-full" type="text" value={stepper.equation} onInput={(event) => update(index, 'equation', event.currentTarget.value)} /></label></div></Show>
+          <Show when={!visible()}><button type="button" class="btn btn-error btn-sm" onClick={() => remove(index)}><Trash2 size={14} />Remove</button></Show>
         </div>
       )}
     </For>

@@ -18,6 +18,7 @@ export const credits: CreditItem[] = [
   { name: 'Pako', repoUrl: 'https://github.com/nodeca/pako', usage: 'compresses editable app state into compact share URLs.', usageRank: 30 },
   { name: 'Lucide Solid', repoUrl: 'https://github.com/lucide-icons/lucide', usage: 'icon set used in actions, panels and modal buttons.', usageRank: 40 },
   { name: 'Tailwind CSS', repoUrl: 'https://github.com/tailwindlabs/tailwindcss', usage: 'utility CSS layer used alongside the custom app stylesheet.', usageRank: 50 },
+  { name: 'daisyUI', repoUrl: 'https://github.com/saadeghi/daisyui', usage: 'Tailwind component classes for buttons, badges, modals, cards and form controls.', usageRank: 51 },
   { name: 'PostCSS', repoUrl: 'https://github.com/postcss/postcss', usage: 'processes the Tailwind and app CSS during builds.', usageRank: 52 },
   { name: 'Autoprefixer', repoUrl: 'https://github.com/postcss/autoprefixer', usage: 'adds browser vendor prefixes to generated CSS.', usageRank: 53 },
   { name: 'Vite', repoUrl: 'https://github.com/vitejs/vite', usage: 'development server, production bundler and asset pipeline.', usageRank: 60 },

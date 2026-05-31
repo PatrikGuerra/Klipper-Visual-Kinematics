@@ -98,6 +98,14 @@ export interface Toolhead {
 
 export type DimensionLayerId = 'bedPhysicalSize' | 'usableBed' | 'usableBedOffset' | 'travelLimits' | 'meshBounds' | 'probeOffset' | 'screwPositions';
 export type DimensionLayers = Record<DimensionLayerId, boolean>;
+export type DockPanelId = 'kinematics' | 'macros' | 'printerCfg';
+
+export interface DockPanelState {
+  collapsed: boolean;
+  width: number;
+}
+
+export type DockPanelsState = Record<DockPanelId, DockPanelState>;
 
 export interface UiState {
   zoom: number;
@@ -106,16 +114,8 @@ export interface UiState {
   testMode: boolean;
   dimensionMenuOpen: boolean;
   dimensionLayers: DimensionLayers;
-  outputCollapsed: boolean;
   macroOutputCollapsed: boolean;
-  kinematicsPanelCollapsed: boolean;
-  kinematicsPanelExpanded: boolean;
-  kinematicsPanelWidth: number;
-  macrosPanelCollapsed: boolean;
-  macrosPanelExpanded: boolean;
-  macrosPanelWidth: number;
-  printerCfgPanelCollapsed: boolean;
-  printerCfgPanelWidth: number;
+  dockPanels: DockPanelsState;
   printerCfgModalOpen: boolean;
   shareModalOpen: boolean;
   aboutModalOpen: boolean;

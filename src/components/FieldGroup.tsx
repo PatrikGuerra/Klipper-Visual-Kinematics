@@ -86,7 +86,7 @@ export default function FieldGroup(props: FieldGroupProps) {
         <label for={`field_${field.id}`}>{field.label}</label>
         <input
           id={`field_${field.id}`}
-          class={fieldClass(field.id)}
+          class={`input input-bordered input-sm w-full ${fieldClass(field.id)}`}
           title={titleFor(field.id)}
           type={field.type}
           step={field.step}

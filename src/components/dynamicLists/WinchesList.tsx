@@ -38,12 +38,12 @@ export default function WinchesList(props: WinchesListProps) {
     <For each={entries()}>
       {({ value: winch, index }) => (
         <div classList={{ filtered: visible() }} class="list-row winch-row">
-          <Show when={matches('Name', 'winch_name')}><div><label>Name<input type="text" value={winch.name} onInput={(event) => update(index, 'name', event.currentTarget.value)} /></label></div></Show>
-          <Show when={matches('Anchor X', 'anchor_x')}><div><label>Anchor X<input type="number" value={winch.x} onInput={(event) => update(index, 'x', event.currentTarget.value)} /></label></div></Show>
-          <Show when={matches('Anchor Y', 'anchor_y')}><div><label>Anchor Y<input type="number" value={winch.y} onInput={(event) => update(index, 'y', event.currentTarget.value)} /></label></div></Show>
-          <Show when={matches('Anchor Z', 'anchor_z')}><div><label>Anchor Z<input type="number" value={winch.z} onInput={(event) => update(index, 'z', event.currentTarget.value)} /></label></div></Show>
-          <Show when={matches('Rot dist', 'rotation_distance')}><div><label>Rot dist<input type="number" value={winch.rotation_distance} onInput={(event) => update(index, 'rotation_distance', event.currentTarget.value)} /></label></div></Show>
-          <Show when={!visible()}><button type="button" class="danger" onClick={() => remove(index)}><Trash2 size={14} />Remove</button></Show>
+          <Show when={matches('Name', 'winch_name')}><div><label>Name<input class="input input-bordered input-sm w-full" type="text" value={winch.name} onInput={(event) => update(index, 'name', event.currentTarget.value)} /></label></div></Show>
+          <Show when={matches('Anchor X', 'anchor_x')}><div><label>Anchor X<input class="input input-bordered input-sm w-full" type="number" value={winch.x} onInput={(event) => update(index, 'x', event.currentTarget.value)} /></label></div></Show>
+          <Show when={matches('Anchor Y', 'anchor_y')}><div><label>Anchor Y<input class="input input-bordered input-sm w-full" type="number" value={winch.y} onInput={(event) => update(index, 'y', event.currentTarget.value)} /></label></div></Show>
+          <Show when={matches('Anchor Z', 'anchor_z')}><div><label>Anchor Z<input class="input input-bordered input-sm w-full" type="number" value={winch.z} onInput={(event) => update(index, 'z', event.currentTarget.value)} /></label></div></Show>
+          <Show when={matches('Rot dist', 'rotation_distance')}><div><label>Rot dist<input class="input input-bordered input-sm w-full" type="number" value={winch.rotation_distance} onInput={(event) => update(index, 'rotation_distance', event.currentTarget.value)} /></label></div></Show>
+          <Show when={!visible()}><button type="button" class="btn btn-error btn-sm" onClick={() => remove(index)}><Trash2 size={14} />Remove</button></Show>
         </div>
       )}
     </For>

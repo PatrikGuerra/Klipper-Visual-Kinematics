@@ -2,6 +2,7 @@ import { createEffect, onCleanup } from 'solid-js';
 import { createStore, produce, reconcile } from 'solid-js/store';
 import { createDefaultState, specificDefaults, commonDefaults } from './kinematics/defaults';
 import { normalizeDimensionLayers } from './kinematics/dimensionLayers';
+import { clampDockPanelWidth, normalizeDockPanels } from './layout/dockPanels';
 import {
   normalizeCarriages,
   normalizeGenericSteppers,
@@ -15,7 +16,7 @@ import {
 } from './kinematics/stateNormalization';
 import { simulateMacro } from './macros/simulator';
 import { applyPortableShareState, createPortableShareState, decodeShareState, encodeShareState, readShareHash, writeShareHash } from './share/shareState';
-import type { AppState, FieldValue, MacroDefinition } from './kinematics/types';
+import type { AppState, DockPanelId, FieldValue, MacroDefinition } from './kinematics/types';
 
 const STORAGE_KEY = 'klipper-visual-kinematics-solid-v1';
 const LEGACY_KEYS = ['klipper-visual-kinematics-svelte-v1', 'klipper-visual-kinematics-v1'];
@@ -40,8 +41,37 @@ export function mergeStoredState(raw: unknown): AppState {
   const toolhead = normalizeToolhead(candidate.toolhead, resolveDefaultToolhead(values));
   const macros = normalizeMacros(candidate.macros, toolhead, defaults.macros);
   const activeMacroId = candidate.activeMacroId && macros.some((macro) => macro.id === candidate.activeMacroId) ? candidate.activeMacroId : macros[0]?.id ?? '';
-  const candidateUi = candidate.ui && typeof candidate.ui === 'object' ? candidate.ui as Partial<AppState['ui']> & { showDimensions?: unknown; sideViewAxis?: unknown; sideViewEnabled?: unknown } : {};
-  const { showDimensions: legacyShowDimensions, sideViewAxis: _legacySideViewAxis, sideViewEnabled: _legacySideViewEnabled, ...storedUi } = candidateUi;
+  const candidateUi = candidate.ui && typeof candidate.ui === 'object'
+    ? candidate.ui as Partial<AppState['ui']> & {
+      showDimensions?: unknown;
+      sideViewAxis?: unknown;
+      sideViewEnabled?: unknown;
+      outputCollapsed?: unknown;
+      kinematicsPanelCollapsed?: unknown;
+      kinematicsPanelExpanded?: unknown;
+      kinematicsPanelWidth?: unknown;
+      macrosPanelCollapsed?: unknown;
+      macrosPanelExpanded?: unknown;
+      macrosPanelWidth?: unknown;
+      printerCfgPanelCollapsed?: unknown;
+      printerCfgPanelWidth?: unknown;
+    }
+    : {};
+  const {
+    showDimensions: legacyShowDimensions,
+    sideViewAxis: _legacySideViewAxis,
+    sideViewEnabled: _legacySideViewEnabled,
+    outputCollapsed: _legacyOutputCollapsed,
+    kinematicsPanelCollapsed: _legacyKinematicsPanelCollapsed,
+    kinematicsPanelExpanded: _legacyKinematicsPanelExpanded,
+    kinematicsPanelWidth: _legacyKinematicsPanelWidth,
+    macrosPanelCollapsed: _legacyMacrosPanelCollapsed,
+    macrosPanelExpanded: _legacyMacrosPanelExpanded,
+    macrosPanelWidth: _legacyMacrosPanelWidth,
+    printerCfgPanelCollapsed: _legacyPrinterCfgPanelCollapsed,
+    printerCfgPanelWidth: _legacyPrinterCfgPanelWidth,
+    ...storedUi
+  } = candidateUi;
   const merged: AppState = {
     ...defaults,
     ...candidate,
@@ -51,6 +81,7 @@ export function mergeStoredState(raw: unknown): AppState {
       ...storedUi,
       dimensionMenuOpen: false,
       dimensionLayers: normalizeDimensionLayers(storedUi.dimensionLayers, legacyShowDimensions === true),
+      dockPanels: normalizeDockPanels(storedUi.dockPanels),
       configLineOverrides: normalizeNestedStringRecord(storedUi.configLineOverrides),
       configExtraLines: normalizeStringArrayRecord(storedUi.configExtraLines)
     },
@@ -172,6 +203,25 @@ export function patchUi(patch: Partial<AppState['ui']>): void {
   setAppState(
     produce((state) => {
     state.ui = { ...state.ui, ...patch };
+    })
+  );
+}
+
+export function toggleDockPanel(id: DockPanelId): void {
+  setAppState(
+    produce((state) => {
+    const panel = state.ui.dockPanels[id];
+    panel.collapsed = !panel.collapsed;
+    if (id === 'macros' && panel.collapsed) state.macroRun.playing = false;
+    })
+  );
+}
+
+export function resizeDockPanel(id: DockPanelId, width: number): void {
+  setAppState(
+    produce((state) => {
+    state.ui.dockPanels[id].collapsed = false;
+    state.ui.dockPanels[id].width = clampDockPanelWidth(id, width);
     })
   );
 }

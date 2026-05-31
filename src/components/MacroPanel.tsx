@@ -301,48 +301,43 @@ export default function MacroPanel(props: MacroPanelProps) {
           <></>
         </Show>
         <div class="button-row">
-          <div class="macro-add-menu-wrap" ref={addMenuRef}>
-            <button type="button" class="primary" aria-haspopup="menu" aria-expanded={addMenuOpen()} onClick={() => setAddMenuOpen((open) => !open)}>
+          <div classList={{ 'dropdown-open': addMenuOpen() }} class="dropdown" ref={addMenuRef}>
+            <button type="button" class="btn btn-primary btn-sm" aria-haspopup="menu" aria-expanded={addMenuOpen()} onClick={() => setAddMenuOpen((open) => !open)}>
               <Plus size={14} />Add Macro<ChevronDown size={13} />
             </button>
             <Show when={addMenuOpen()}>
-              <div class="macro-add-menu" role="menu" aria-label="Add macro preset">
-                <button type="button" role="menuitem" onClick={() => addMacro('blank')}>
-                  <FilePlus size={14} />
-                  <span>
-                    <strong>Blank macro</strong>
-                    <small>Start with a simple editable G-code block.</small>
-                  </span>
-                </button>
-                <button type="button" role="menuitem" onClick={() => addMacro('clean')}>
-                  <Sparkles size={14} />
-                  <span>
-                    <strong>Nozzle cleaning example</strong>
-                    <small>Creates an editable wipe and purge macro.</small>
-                  </span>
-                </button>
-                <button type="button" role="menuitem" onClick={() => addMacro('prime')}>
-                  <Plus size={14} />
-                  <span>
-                    <strong>Prime line example</strong>
-                    <small>Purges filament along the front of the usable bed.</small>
-                  </span>
-                </button>
-                <button type="button" role="menuitem" onClick={() => addMacro('perimeter')}>
-                  <Eye size={14} />
-                  <span>
-                    <strong>Bed perimeter check</strong>
-                    <small>Traces the usable bed limits without extruding.</small>
-                  </span>
-                </button>
-                <button type="button" role="menuitem" onClick={() => addMacro('park')}>
-                  <SquareParking size={14} />
-                  <span>
-                    <strong>Park toolhead example</strong>
-                    <small>Creates an editable safe parking move.</small>
-                  </span>
-                </button>
-              </div>
+              <ul class="dropdown-content menu z-[35] w-80 rounded-box border border-base-300 bg-base-100 p-2 shadow-xl" role="menu" aria-label="Add macro preset">
+                <li>
+                  <a role="menuitem" onClick={() => addMacro('blank')}>
+                    <FilePlus size={14} />
+                    <span class="grid gap-0.5"><strong class="text-xs">Blank macro</strong><small class="text-[0.68rem] leading-snug opacity-60">Start with a simple editable G-code block.</small></span>
+                  </a>
+                </li>
+                <li>
+                  <a role="menuitem" onClick={() => addMacro('clean')}>
+                    <Sparkles size={14} />
+                    <span class="grid gap-0.5"><strong class="text-xs">Nozzle cleaning example</strong><small class="text-[0.68rem] leading-snug opacity-60">Creates an editable wipe and purge macro.</small></span>
+                  </a>
+                </li>
+                <li>
+                  <a role="menuitem" onClick={() => addMacro('prime')}>
+                    <Plus size={14} />
+                    <span class="grid gap-0.5"><strong class="text-xs">Prime line example</strong><small class="text-[0.68rem] leading-snug opacity-60">Purges filament along the front of the usable bed.</small></span>
+                  </a>
+                </li>
+                <li>
+                  <a role="menuitem" onClick={() => addMacro('perimeter')}>
+                    <Eye size={14} />
+                    <span class="grid gap-0.5"><strong class="text-xs">Bed perimeter check</strong><small class="text-[0.68rem] leading-snug opacity-60">Traces the usable bed limits without extruding.</small></span>
+                  </a>
+                </li>
+                <li>
+                  <a role="menuitem" onClick={() => addMacro('park')}>
+                    <SquareParking size={14} />
+                    <span class="grid gap-0.5"><strong class="text-xs">Park toolhead example</strong><small class="text-[0.68rem] leading-snug opacity-60">Creates an editable safe parking move.</small></span>
+                  </a>
+                </li>
+              </ul>
             </Show>
           </div>
         </div>
@@ -356,21 +351,21 @@ export default function MacroPanel(props: MacroPanelProps) {
                 <div class="macro-block-divider"></div>
                 <div>
                   <label for="active-macro">Active macro</label>
-                  <select id="active-macro" value={macro().id} onChange={(event) => setActive(event.currentTarget.value)}>
+                  <select id="active-macro" class="select select-bordered select-sm w-full" value={macro().id} onChange={(event) => setActive(event.currentTarget.value)}>
                     <For each={props.state.macros}>{(item) => <option value={item.id}>{item.name}</option>}</For>
                   </select>
                 </div>
 
                 <div class="button-row macro-actions">
-                  <button type="button" onClick={duplicateMacro}><Copy size={14} />Duplicate</button>
-                  <button type="button" class="danger" onClick={deleteMacro}><Trash2 size={14} />Delete</button>
+                  <button type="button" class="btn btn-sm" onClick={duplicateMacro}><Copy size={14} />Duplicate</button>
+                  <button type="button" class="btn btn-error btn-sm" onClick={deleteMacro}><Trash2 size={14} />Delete</button>
                 </div>
 
                 <div class="macro-block-divider"></div>
                 <div class="field-grid">
                   <div class="field">
                     <label for="macro-name">Macro name</label>
-                    <input id="macro-name" type="text" value={macro().name} onInput={(event) => updateActive((item) => (item.name = event.currentTarget.value))} />
+                    <input id="macro-name" class="input input-bordered input-sm w-full" type="text" value={macro().name} onInput={(event) => updateActive((item) => (item.name = event.currentTarget.value))} />
                   </div>
                   <div class="field">
                     <span class="field-label">Simulation start</span>
@@ -389,47 +384,47 @@ export default function MacroPanel(props: MacroPanelProps) {
                   </div>
                   <div class="field full">
                     <label for="macro-description">Description</label>
-                    <input id="macro-description" type="text" value={macro().description} onInput={(event) => updateActive((item) => (item.description = event.currentTarget.value), false)} />
+                    <input id="macro-description" class="input input-bordered input-sm w-full" type="text" value={macro().description} onInput={(event) => updateActive((item) => (item.description = event.currentTarget.value), false)} />
                   </div>
                 </div>
 
                 <Show when={macro().simulationStartMode === 'manual'}>
                   <div class="field-grid">
-                    <div class="field"><label for="macro-start-x">Start X</label><input id="macro-start-x" type="number" step="0.1" value={macro().simulationStart.x} onInput={(event) => updateActive((item) => (item.simulationStart.x = Number(event.currentTarget.value)))} /></div>
-                    <div class="field"><label for="macro-start-y">Start Y</label><input id="macro-start-y" type="number" step="0.1" value={macro().simulationStart.y} onInput={(event) => updateActive((item) => (item.simulationStart.y = Number(event.currentTarget.value)))} /></div>
-                    <div class="field"><label for="macro-start-z">Start Z</label><input id="macro-start-z" type="number" step="0.1" value={macro().simulationStart.z} onInput={(event) => updateActive((item) => (item.simulationStart.z = Number(event.currentTarget.value)))} /></div>
+                    <div class="field"><label for="macro-start-x">Start X</label><input id="macro-start-x" class="input input-bordered input-sm w-full" type="number" step="0.1" value={macro().simulationStart.x} onInput={(event) => updateActive((item) => (item.simulationStart.x = Number(event.currentTarget.value)))} /></div>
+                    <div class="field"><label for="macro-start-y">Start Y</label><input id="macro-start-y" class="input input-bordered input-sm w-full" type="number" step="0.1" value={macro().simulationStart.y} onInput={(event) => updateActive((item) => (item.simulationStart.y = Number(event.currentTarget.value)))} /></div>
+                    <div class="field"><label for="macro-start-z">Start Z</label><input id="macro-start-z" class="input input-bordered input-sm w-full" type="number" step="0.1" value={macro().simulationStart.z} onInput={(event) => updateActive((item) => (item.simulationStart.z = Number(event.currentTarget.value)))} /></div>
                   </div>
                 </Show>
 
                 <div class="run-controls">
-                  <button type="button" class="primary" onClick={preview}><Eye size={14} />Preview</button>
-                  <button type="button" class="warning" onClick={stepPreview}><StepForward size={14} />Step</button>
-                  <button type="button" class={props.state.macroRun.playing ? 'warning' : 'success'} onClick={togglePlay}>
+                  <button type="button" class="btn btn-primary btn-sm" onClick={preview}><Eye size={14} />Preview</button>
+                  <button type="button" class="btn btn-warning btn-sm" onClick={stepPreview}><StepForward size={14} />Step</button>
+                  <button type="button" class={props.state.macroRun.playing ? 'btn btn-warning btn-sm' : 'btn btn-success btn-sm'} onClick={togglePlay}>
                     <Show when={props.state.macroRun.playing} fallback={<><Play size={14} />Play</>}><Pause size={14} />Pause</Show>
                   </button>
-                  <button type="button" onClick={resetPreview}><RotateCcw size={14} />Reset</button>
-                  <label class="toggle">
-                    <input type="checkbox" checked={props.state.macroRun.loopPreview} onChange={(event) => updateMutable((draft) => (draft.macroRun.loopPreview = event.currentTarget.checked))} />
+                  <button type="button" class="btn btn-sm" onClick={resetPreview}><RotateCcw size={14} />Reset</button>
+                  <label class="loop-checkbox-control">
+                    <input class="checkbox checkbox-primary checkbox-sm" type="checkbox" checked={props.state.macroRun.loopPreview} onChange={(event) => updateMutable((draft) => (draft.macroRun.loopPreview = event.currentTarget.checked))} />
                     <span>Loop</span>
                   </label>
                   <label class="speed-control">
                     <span>Speed</span>
-                    <input type="range" min="0.25" max="4" step="0.25" value={props.state.macroRun.speed} onInput={(event) => updateMutable((draft) => (draft.macroRun.speed = Number(event.currentTarget.value)))} />
+                    <input class="range range-primary range-xs" type="range" min="0.25" max="4" step="0.25" value={props.state.macroRun.speed} onInput={(event) => updateMutable((draft) => (draft.macroRun.speed = Number(event.currentTarget.value)))} />
                   </label>
                 </div>
               </div>
 
               <div class="macro-editor">
                 <label for="macro-params">Optional config lines before gcode:</label>
-                <textarea id="macro-params" rows={2} spellcheck={false} value={macro().paramsText} onInput={(event) => updateActive((item) => (item.paramsText = event.currentTarget.value), false)} />
+                <textarea id="macro-params" class="textarea textarea-bordered textarea-sm w-full font-mono" rows={2} spellcheck={false} value={macro().paramsText} onInput={(event) => updateActive((item) => (item.paramsText = event.currentTarget.value), false)} />
                 <label for="macro-gcode">G-code block</label>
                 <GcodeEditor id="macro-gcode" ariaLabel="G-code block" value={macro().gcode} macroNames={localMacroNames()} onChange={(value) => updateActive((item) => (item.gcode = value))} />
               </div>
             </div>
 
             <div class="macro-summary">
-              <span class="pill">{props.state.macroPreview.segments.length} event(s)</span>
-              <Show when={props.state.macroPreview.partial}><span class="pill warn">partial preview</span></Show>
+              <span class="badge badge-primary badge-sm">{props.state.macroPreview.segments.length} event(s)</span>
+              <Show when={props.state.macroPreview.partial}><span class="badge badge-warning badge-sm">partial preview</span></Show>
               <span class="muted">Step {props.state.macroRun.stepIndex + 1} / {props.state.macroPreview.segments.length} ({Math.round(props.state.macroRun.segmentProgress * 100)}%)</span>
               <span class="muted">Final: X{props.state.macroPreview.finalToolhead.x.toFixed(1)} Y{props.state.macroPreview.finalToolhead.y.toFixed(1)} Z{props.state.macroPreview.finalToolhead.z.toFixed(1)}</span>
               <span class="muted">E: {finalExtruder().toFixed(2)} / +{totalExtrusion().toFixed(2)}mm</span>
@@ -437,7 +432,13 @@ export default function MacroPanel(props: MacroPanelProps) {
 
             <Show when={macroDiagnostics().length}>
               <div class="macro-diagnostics">
-                <For each={macroDiagnostics().slice(0, 6)}>{(item) => <div class={`diagnostic ${item.type}`}>{item.type.toUpperCase()}: {item.message}</div>}</For>
+                <For each={macroDiagnostics().slice(0, 6)}>
+                  {(item) => (
+                    <div class={`alert ${item.type === 'error' ? 'alert-error' : item.type === 'warning' ? 'alert-warning' : 'alert-info'} py-2 text-xs`}>
+                      {item.type.toUpperCase()}: {item.message}
+                    </div>
+                  )}
+                </For>
               </div>
             </Show>
           </>

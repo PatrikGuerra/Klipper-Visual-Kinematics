@@ -228,13 +228,13 @@ export default function KinematicsPanel(props: KinematicsPanelProps) {
           <div class="panel-title"><span>{kin().name} Settings</span></div>
           <FieldGroup fields={kinematicFields()} state={props.state} diagnostics={props.diagnostics} layout={kinematicLayouts[kin().id]} emptyMessage="No matching config fields in this block." />
           <Show when={kin().id === 'winch' && (!searchTerm() || showWinches())}>
-            <div class="sub-title"><span>Cable winches</span><Show when={!searchTerm()}><button type="button" class="success" onClick={addWinch}><Plus size={14} />Add winch</button></Show></div>
+            <div class="sub-title"><span>Cable winches</span><Show when={!searchTerm()}><button type="button" class="btn btn-success btn-sm" onClick={addWinch}><Plus size={14} />Add winch</button></Show></div>
             <DynamicList state={props.state} type="winches" filterText={configSearch()} />
           </Show>
           <Show when={kin().id === 'generic_cartesian'}>
             <Show when={!searchTerm()}><div class="specific-note">Define primary carriages and steppers. Equations are visual/readout helpers and do not replace Klipper's real stepper configuration.</div></Show>
-            <Show when={!searchTerm() || showCarriages()}><div class="sub-title"><span>Carriages</span><Show when={!searchTerm()}><button type="button" class="success" onClick={addCarriage}><Plus size={14} />Add carriage</button></Show></div><DynamicList state={props.state} type="carriages" filterText={configSearch()} /></Show>
-            <Show when={!searchTerm() || showGenericSteppers()}><div class="sub-title"><span>Steppers</span><Show when={!searchTerm()}><button type="button" class="success" onClick={addStepper}><Plus size={14} />Add stepper</button></Show></div><DynamicList state={props.state} type="genericSteppers" filterText={configSearch()} /></Show>
+            <Show when={!searchTerm() || showCarriages()}><div class="sub-title"><span>Carriages</span><Show when={!searchTerm()}><button type="button" class="btn btn-success btn-sm" onClick={addCarriage}><Plus size={14} />Add carriage</button></Show></div><DynamicList state={props.state} type="carriages" filterText={configSearch()} /></Show>
+            <Show when={!searchTerm() || showGenericSteppers()}><div class="sub-title"><span>Steppers</span><Show when={!searchTerm()}><button type="button" class="btn btn-success btn-sm" onClick={addStepper}><Plus size={14} />Add stepper</button></Show></div><DynamicList state={props.state} type="genericSteppers" filterText={configSearch()} /></Show>
           </Show>
           <Show when={kin().id === 'none' && !searchTerm()}><div class="specific-note">No axis, probe, mesh, or stepper sections are generated for this mode.</div></Show>
           <Show when={kin().status !== 'stable' && !searchTerm()}><div class="specific-note">This kinematic is flagged as {kin().status}. Generated config is intentionally conservative.</div></Show>

@@ -1,5 +1,6 @@
 import { kinematicsCatalog } from './catalog';
 import { createDefaultDimensionLayers } from './dimensionLayers';
+import { createDefaultDockPanelsState } from '../layout/dockPanels';
 import { createNozzleCleaningMacro } from '../macros/presets';
 import { simulateMacro } from '../macros/simulator';
 import type { AppState, FieldValue } from './types';
@@ -133,16 +134,8 @@ export function createDefaultState(): AppState {
       testMode: false,
       dimensionMenuOpen: false,
       dimensionLayers: createDefaultDimensionLayers(),
-      outputCollapsed: false,
       macroOutputCollapsed: false,
-      kinematicsPanelCollapsed: false,
-      kinematicsPanelExpanded: false,
-      kinematicsPanelWidth: 360,
-      macrosPanelCollapsed: false,
-      macrosPanelExpanded: false,
-      macrosPanelWidth: 430,
-      printerCfgPanelCollapsed: false,
-      printerCfgPanelWidth: 240,
+      dockPanels: createDefaultDockPanelsState(),
       printerCfgModalOpen: false,
       shareModalOpen: false,
       aboutModalOpen: false,

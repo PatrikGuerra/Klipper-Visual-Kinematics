@@ -174,17 +174,17 @@ export default function VisualizerCanvas(props: VisualizerCanvasProps) {
         </div>
         <div class="toolbar">
           <div class="dimension-menu-wrap">
-            <button type="button" classList={{ success: hasActiveDimensions() }} aria-expanded={props.state.ui.dimensionMenuOpen} onClick={toggleDimensions}><Ruler size={13} />Dims</button>
+            <button type="button" class={hasActiveDimensions() ? 'btn btn-success btn-xs' : 'btn btn-outline btn-xs'} aria-expanded={props.state.ui.dimensionMenuOpen} onClick={toggleDimensions}><Ruler size={13} />Dims</button>
             <Show when={props.state.ui.dimensionMenuOpen}>
               <div class="dimension-menu">
                 <div class="dimension-menu-actions">
-                  <button type="button" class="ghost" onClick={() => setAllDimensionLayers(true)}>All</button>
-                  <button type="button" class="ghost" onClick={() => setAllDimensionLayers(false)}>None</button>
+                  <button type="button" class="btn btn-ghost btn-xs" onClick={() => setAllDimensionLayers(true)}>All</button>
+                  <button type="button" class="btn btn-ghost btn-xs" onClick={() => setAllDimensionLayers(false)}>None</button>
                 </div>
                 <For each={dimensionLayerIds}>
                   {(id) => (
                     <label class="dimension-layer-row">
-                      <input type="checkbox" checked={props.state.ui.dimensionLayers[id]} onChange={(event) => setDimensionLayer(id, event.currentTarget.checked)} />
+                      <input class="checkbox checkbox-primary checkbox-xs" type="checkbox" checked={props.state.ui.dimensionLayers[id]} onChange={(event) => setDimensionLayer(id, event.currentTarget.checked)} />
                       <span>{dimensionLayerLabels[id]}</span>
                     </label>
                   )}
@@ -192,7 +192,7 @@ export default function VisualizerCanvas(props: VisualizerCanvasProps) {
               </div>
             </Show>
           </div>
-          <button type="button" classList={{ primary: props.state.ui.testMode }} onClick={toggleTest}><MousePointer2 size={13} />Test</button>
+          <button type="button" class={props.state.ui.testMode ? 'btn btn-primary btn-xs' : 'btn btn-outline btn-xs'} onClick={toggleTest}><MousePointer2 size={13} />Test</button>
           <button type="button" class="tool-button" aria-label="Zoom out" onClick={() => zoomBy(1 / 1.25)}><ZoomOut size={13} /></button>
           <span class="zoom-label">{Math.round(props.state.ui.zoom * 100)}%</span>
           <button type="button" class="tool-button" aria-label="Zoom in" onClick={() => zoomBy(1.25)}><ZoomIn size={13} /></button>

@@ -38,12 +38,12 @@ export default function CarriagesList(props: CarriagesListProps) {
     <For each={entries()}>
       {({ value: carriage, index }) => (
         <div classList={{ filtered: visible() }} class="list-row carriage-row">
-          <Show when={matches('Name', 'carriage_name')}><div><label>Name<input type="text" value={carriage.name} onInput={(event) => update(index, 'name', event.currentTarget.value)} /></label></div></Show>
-          <Show when={matches('Axis', 'axis')}><div><label>Axis<input type="text" value={carriage.axis} onInput={(event) => update(index, 'axis', event.currentTarget.value)} /></label></div></Show>
-          <Show when={matches('Min', 'position_min')}><div><label>Min<input type="number" value={carriage.min} onInput={(event) => update(index, 'min', event.currentTarget.value)} /></label></div></Show>
-          <Show when={matches('Max', 'position_max')}><div><label>Max<input type="number" value={carriage.max} onInput={(event) => update(index, 'max', event.currentTarget.value)} /></label></div></Show>
-          <Show when={matches('Endstop', 'position_endstop')}><div><label>Endstop<input type="number" value={carriage.endstop} onInput={(event) => update(index, 'endstop', event.currentTarget.value)} /></label></div></Show>
-          <Show when={!visible()}><button type="button" class="danger" onClick={() => remove(index)}><Trash2 size={14} />Remove</button></Show>
+          <Show when={matches('Name', 'carriage_name')}><div><label>Name<input class="input input-bordered input-sm w-full" type="text" value={carriage.name} onInput={(event) => update(index, 'name', event.currentTarget.value)} /></label></div></Show>
+          <Show when={matches('Axis', 'axis')}><div><label>Axis<input class="input input-bordered input-sm w-full" type="text" value={carriage.axis} onInput={(event) => update(index, 'axis', event.currentTarget.value)} /></label></div></Show>
+          <Show when={matches('Min', 'position_min')}><div><label>Min<input class="input input-bordered input-sm w-full" type="number" value={carriage.min} onInput={(event) => update(index, 'min', event.currentTarget.value)} /></label></div></Show>
+          <Show when={matches('Max', 'position_max')}><div><label>Max<input class="input input-bordered input-sm w-full" type="number" value={carriage.max} onInput={(event) => update(index, 'max', event.currentTarget.value)} /></label></div></Show>
+          <Show when={matches('Endstop', 'position_endstop')}><div><label>Endstop<input class="input input-bordered input-sm w-full" type="number" value={carriage.endstop} onInput={(event) => update(index, 'endstop', event.currentTarget.value)} /></label></div></Show>
+          <Show when={!visible()}><button type="button" class="btn btn-error btn-sm" onClick={() => remove(index)}><Trash2 size={14} />Remove</button></Show>
         </div>
       )}
     </For>

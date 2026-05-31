@@ -1,5 +1,5 @@
-import { createMemo, onCleanup } from 'solid-js';
-import { Info, Share2 } from 'lucide-solid';
+import { createMemo } from 'solid-js';
+import { Info, Link } from 'lucide-solid';
 import { appState, persistAppState, syncShareUrl, updateMutable } from './store';
 import { validateState } from './kinematics/validators';
 import { getMotorReadout } from './kinematics/transforms';
@@ -16,9 +16,8 @@ import PrinterCfgPanel from './components/PrinterCfgPanel';
 import PrinterCfgModal from './components/PrinterCfgModal';
 import ShareModal from './components/ShareModal';
 import AboutModal from './components/AboutModal';
+import PanelDock, { type PanelDockItem } from './components/PanelDock';
 import Button from './lib/components/ui/Button';
-
-type PanelId = 'kinematics' | 'macros' | 'printerCfg';
 
 export default function App() {
   persistAppState();
@@ -28,73 +27,14 @@ export default function App() {
   const motorRows = createMemo(() => getMotorReadout(appState));
   const macroConfig = createMemo(() => generateMacrosConfig(appState.macros));
   const generatedConfig = createMemo(() => appendUnmanagedConfig([generateConfig(appState), macroConfig()].filter(Boolean).join('\n\n'), String(appState.ui.unmanagedConfigText || '')));
-  const kinematicsWidth = createMemo(() => panelWidth(appState.ui.kinematicsPanelCollapsed, Number(appState.ui.kinematicsPanelWidth), 360, 280, 760));
-  const macrosWidth = createMemo(() => panelWidth(appState.ui.macrosPanelCollapsed, Number(appState.ui.macrosPanelWidth), 430, 320, 860));
-  const printerCfgWidth = createMemo(() => panelWidth(appState.ui.printerCfgPanelCollapsed, Number(appState.ui.printerCfgPanelWidth), 240, 180, 420));
-
-  let resizingPanel: PanelId | null = null;
-
-  onCleanup(stopResize);
-
-  function panelWidth(collapsed: boolean, savedWidth: number, fallbackWidth: number, min: number, max: number): number {
-    if (collapsed) return 44;
-    return clamp(savedWidth || fallbackWidth, min, max);
-  }
-
-  function togglePanel(panel: PanelId): void {
-    updateMutable((draft) => {
-      if (panel === 'kinematics') {
-        draft.ui.kinematicsPanelCollapsed = !draft.ui.kinematicsPanelCollapsed;
-        if (!draft.ui.kinematicsPanelCollapsed) draft.ui.kinematicsPanelExpanded = false;
-      } else if (panel === 'macros') {
-        draft.ui.macrosPanelCollapsed = !draft.ui.macrosPanelCollapsed;
-        draft.macroRun.playing = false;
-        if (!draft.ui.macrosPanelCollapsed) draft.ui.macrosPanelExpanded = false;
-      } else {
-        draft.ui.printerCfgPanelCollapsed = !draft.ui.printerCfgPanelCollapsed;
-      }
-    });
-  }
-
-  function startResize(panel: PanelId, event: MouseEvent): void {
-    event.preventDefault();
-    resizingPanel = panel;
-    document.body.classList.add('resizing-panels');
-    window.addEventListener('mousemove', resizePanel);
-    window.addEventListener('mouseup', stopResize);
-  }
-
-  function resizePanel(event: MouseEvent): void {
-    if (!resizingPanel) return;
-    updateMutable((draft) => {
-      if (resizingPanel === 'kinematics') {
-        draft.ui.kinematicsPanelCollapsed = false;
-        draft.ui.kinematicsPanelExpanded = false;
-        draft.ui.kinematicsPanelWidth = clamp(event.clientX, 280, 760);
-      } else if (resizingPanel === 'macros') {
-        draft.ui.macrosPanelCollapsed = false;
-        draft.ui.macrosPanelExpanded = false;
-        draft.ui.macrosPanelWidth = clamp(event.clientX - kinematicsWidth(), 320, 860);
-      } else {
-        draft.ui.printerCfgPanelCollapsed = false;
-        draft.ui.printerCfgPanelWidth = clamp(event.clientX - kinematicsWidth() - macrosWidth(), 180, 420);
-      }
-    });
-  }
-
-  function stopResize(): void {
-    resizingPanel = null;
-    document.body.classList.remove('resizing-panels');
-    window.removeEventListener('mousemove', resizePanel);
-    window.removeEventListener('mouseup', stopResize);
-  }
-
-  function clamp(value: number, min: number, max: number): number {
-    return Math.max(min, Math.min(max, value));
-  }
+  const dockPanels = createMemo<PanelDockItem[]>(() => [
+    { id: 'kinematics', title: 'Kinematics', content: <KinematicsPanel state={appState} diagnostics={diagnostics()} /> },
+    { id: 'macros', title: 'Macro Editor', content: <MacroPanel state={appState} vertical /> },
+    { id: 'printerCfg', title: 'printer.cfg', content: <PrinterCfgPanel state={appState} generatedConfig={generatedConfig()} /> }
+  ]);
 
   return (
-    <>
+    <div data-theme="klipper">
       <header class="app-header">
         <div class="header-brand">
           <div class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></div>
@@ -102,77 +42,30 @@ export default function App() {
             <div class="header-title-row">
               <h1>Klipper Visual Kinematics</h1>
               <Button variant="outline" size="sm" onClick={() => updateMutable((draft) => (draft.ui.aboutModalOpen = true))}><Info size={14} />About</Button>
-              <Button variant="outline" size="sm" onClick={() => updateMutable((draft) => (draft.ui.shareModalOpen = true))}><Share2 size={14} />Share</Button>
+              <Button variant="outline" size="sm" onClick={() => updateMutable((draft) => (draft.ui.shareModalOpen = true))}><Link size={14} />Share</Button>
             </div>
             <p>Visualize motion models, validate reach, and generate positioning config sections.</p>
           </div>
         </div>
       </header>
 
-      <main
-        classList={{
-          'output-collapsed': appState.ui.outputCollapsed,
-          'kinematics-collapsed': appState.ui.kinematicsPanelCollapsed,
-          'macros-collapsed': appState.ui.macrosPanelCollapsed,
-          'printer-cfg-collapsed': appState.ui.printerCfgPanelCollapsed
-        }}
-        class="app-layout"
-        style={`--kinematics-panel-width: ${kinematicsWidth()}px; --macros-panel-width: ${macrosWidth()}px; --printer-cfg-panel-width: ${printerCfgWidth()}px;`}
-      >
-        <aside classList={{ collapsed: appState.ui.kinematicsPanelCollapsed }} class="vertical-panel kinematics-vertical-panel">
-          <button type="button" class="vertical-panel-header" aria-expanded={!appState.ui.kinematicsPanelCollapsed} onClick={() => togglePanel('kinematics')}>
-            <span class="vertical-panel-title-button">Kinematics</span>
-          </button>
-          {appState.ui.kinematicsPanelCollapsed ? (
-            <button type="button" class="panel-rail-button" onClick={() => togglePanel('kinematics')}>Kinematics</button>
-          ) : (
-            <>
-              <KinematicsPanel state={appState} diagnostics={diagnostics()} />
-              <button type="button" class="resize-handle resize-handle-right" aria-label="Resize Kinematics panel" onMouseDown={(event) => startResize('kinematics', event)}></button>
-            </>
-          )}
-        </aside>
-
-        <aside classList={{ collapsed: appState.ui.macrosPanelCollapsed }} class="vertical-panel macros-vertical-panel">
-          <button type="button" class="vertical-panel-header" aria-expanded={!appState.ui.macrosPanelCollapsed} onClick={() => togglePanel('macros')}>
-            <span class="vertical-panel-title-button">Macro Editor</span>
-          </button>
-          {appState.ui.macrosPanelCollapsed ? (
-            <button type="button" class="panel-rail-button" onClick={() => togglePanel('macros')}>Macro Editor</button>
-          ) : (
-            <>
-              <MacroPanel state={appState} vertical />
-              <button type="button" class="resize-handle resize-handle-right" aria-label="Resize Macro Editor panel" onMouseDown={(event) => startResize('macros', event)}></button>
-            </>
-          )}
-        </aside>
-
-        <aside classList={{ collapsed: appState.ui.printerCfgPanelCollapsed }} class="vertical-panel printer-cfg-vertical-panel">
-          <button type="button" class="vertical-panel-header" aria-expanded={!appState.ui.printerCfgPanelCollapsed} onClick={() => togglePanel('printerCfg')}>
-            <span class="vertical-panel-title-button">printer.cfg</span>
-          </button>
-          {appState.ui.printerCfgPanelCollapsed ? (
-            <button type="button" class="panel-rail-button" onClick={() => togglePanel('printerCfg')}>printer.cfg</button>
-          ) : (
-            <>
-              <PrinterCfgPanel state={appState} generatedConfig={generatedConfig()} />
-              <button type="button" class="resize-handle resize-handle-right" aria-label="Resize printer.cfg panel" onMouseDown={(event) => startResize('printerCfg', event)}></button>
-            </>
-          )}
-        </aside>
-
-        <section class="workspace">
-          <VisualizerCanvas state={appState} />
-          <div class="lower-grid">
-            <MotorReadout rows={motorRows()} />
-            <DiagnosticsPanel diagnostics={diagnostics()} />
-          </div>
-        </section>
-      </main>
+      <PanelDock
+        panels={dockPanels()}
+        state={appState.ui.dockPanels}
+        workspace={
+          <section class="workspace">
+            <VisualizerCanvas state={appState} />
+            <div class="lower-grid">
+              <MotorReadout rows={motorRows()} />
+              <DiagnosticsPanel diagnostics={diagnostics()} />
+            </div>
+          </section>
+        }
+      />
 
       <PrinterCfgModal state={appState} generatedConfig={generatedConfig()} />
       <AboutModal state={appState} />
       <ShareModal state={appState} />
-    </>
+    </div>
   );
 }
