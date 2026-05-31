@@ -1,7 +1,7 @@
-import { createEffect, createMemo, onCleanup, Show, For } from 'solid-js';
-import { CircleHelp, Copy, Eye, Pause, Play, Plus, RotateCcw, Sparkles, SquareParking, StepForward, Trash2 } from 'lucide-solid';
+import { createEffect, createMemo, createSignal, onCleanup, Show, For } from 'solid-js';
+import { ChevronDown, CircleHelp, Copy, Eye, FilePlus, Pause, Play, Plus, RotateCcw, Sparkles, SquareParking, StepForward, Trash2 } from 'lucide-solid';
 import { updateActiveMacro, updateMutable } from '../store';
-import { createBlankMacro, createNozzleCleaningMacro, createParkToolheadMacro } from '../macros/presets';
+import { createBedPerimeterCheckMacro, createBlankMacro, createNozzleCleaningMacro, createParkToolheadMacro, createPrimeLineMacro } from '../macros/presets';
 import { simulateMacro } from '../macros/simulator';
 import GcodeEditor from './GcodeEditor';
 import type { AppState, MacroDefinition, MacroSegment, Toolhead } from '../kinematics/types';
@@ -16,7 +16,9 @@ export default function MacroPanel(props: MacroPanelProps) {
   let animationSpeed = 0;
   let animationStartedAt = 0;
   let animatedSegmentIndex = -999;
+  let addMenuRef: HTMLDivElement | undefined;
 
+  const [addMenuOpen, setAddMenuOpen] = createSignal(false);
   const activeMacro = createMemo(() => props.state.macros.find((macro) => macro.id === props.state.activeMacroId) ?? props.state.macros[0]);
   const localMacroNames = createMemo(() => props.state.macros.filter((macro) => macro.id !== props.state.activeMacroId).map((macro) => macro.name));
   const macroDiagnostics = createMemo(() => (props.state.macroPreview.macroId === activeMacro()?.id ? props.state.macroPreview.diagnostics : []));
@@ -29,6 +31,25 @@ export default function MacroPanel(props: MacroPanelProps) {
   });
 
   onCleanup(stopAnimation);
+
+  createEffect(() => {
+    if (!addMenuOpen()) return;
+
+    const onPointerDown = (event: PointerEvent): void => {
+      if (addMenuRef?.contains(event.target as Node)) return;
+      setAddMenuOpen(false);
+    };
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.key === 'Escape') setAddMenuOpen(false);
+    };
+
+    window.addEventListener('pointerdown', onPointerDown);
+    window.addEventListener('keydown', onKeyDown);
+    onCleanup(() => {
+      window.removeEventListener('pointerdown', onPointerDown);
+      window.removeEventListener('keydown', onKeyDown);
+    });
+  });
 
   function startAnimation(speed: number): void {
     if (animationFrame && animationSpeed === speed) return;
@@ -129,14 +150,19 @@ export default function MacroPanel(props: MacroPanelProps) {
     updateActiveMacro(mutator, refreshPreview);
   }
 
-  function addMacro(kind: 'blank' | 'clean' | 'park'): void {
+  function addMacro(kind: 'blank' | 'clean' | 'park' | 'prime' | 'perimeter'): void {
+    setAddMenuOpen(false);
     updateMutable((draft) => {
       const next =
         kind === 'clean'
           ? createNozzleCleaningMacro(draft)
           : kind === 'park'
             ? createParkToolheadMacro(draft)
-            : createBlankMacro(draft.toolhead, draft.macros.length + 1);
+            : kind === 'prime'
+              ? createPrimeLineMacro(draft)
+              : kind === 'perimeter'
+                ? createBedPerimeterCheckMacro(draft)
+                : createBlankMacro(draft.toolhead, draft.macros.length + 1);
       draft.macros.push(next);
       draft.activeMacroId = next.id;
       draft.macroPreview = simulateMacro(next, draft);
@@ -275,9 +301,50 @@ export default function MacroPanel(props: MacroPanelProps) {
           <></>
         </Show>
         <div class="button-row">
-          <button type="button" class="primary" onClick={() => addMacro('blank')}><Plus size={14} />Add Macro</button>
-          <button type="button" class="success" onClick={() => addMacro('clean')}><Sparkles size={14} />Nozzle Cleaning</button>
-          <button type="button" class="warning" onClick={() => addMacro('park')}><SquareParking size={14} />Park</button>
+          <div class="macro-add-menu-wrap" ref={addMenuRef}>
+            <button type="button" class="primary" aria-haspopup="menu" aria-expanded={addMenuOpen()} onClick={() => setAddMenuOpen((open) => !open)}>
+              <Plus size={14} />Add Macro<ChevronDown size={13} />
+            </button>
+            <Show when={addMenuOpen()}>
+              <div class="macro-add-menu" role="menu" aria-label="Add macro preset">
+                <button type="button" role="menuitem" onClick={() => addMacro('blank')}>
+                  <FilePlus size={14} />
+                  <span>
+                    <strong>Blank macro</strong>
+                    <small>Start with a simple editable G-code block.</small>
+                  </span>
+                </button>
+                <button type="button" role="menuitem" onClick={() => addMacro('clean')}>
+                  <Sparkles size={14} />
+                  <span>
+                    <strong>Nozzle cleaning example</strong>
+                    <small>Creates an editable wipe and purge macro.</small>
+                  </span>
+                </button>
+                <button type="button" role="menuitem" onClick={() => addMacro('prime')}>
+                  <Plus size={14} />
+                  <span>
+                    <strong>Prime line example</strong>
+                    <small>Purges filament along the front of the usable bed.</small>
+                  </span>
+                </button>
+                <button type="button" role="menuitem" onClick={() => addMacro('perimeter')}>
+                  <Eye size={14} />
+                  <span>
+                    <strong>Bed perimeter check</strong>
+                    <small>Traces the usable bed limits without extruding.</small>
+                  </span>
+                </button>
+                <button type="button" role="menuitem" onClick={() => addMacro('park')}>
+                  <SquareParking size={14} />
+                  <span>
+                    <strong>Park toolhead example</strong>
+                    <small>Creates an editable safe parking move.</small>
+                  </span>
+                </button>
+              </div>
+            </Show>
+          </div>
         </div>
       </div>
 

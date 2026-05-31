@@ -1341,6 +1341,74 @@ pre {
   width: 100%;
 }
 
+.macro-add-menu-wrap {
+  position: relative;
+  display: inline-flex;
+  min-width: 0;
+}
+
+.macro-panel-vertical .macro-add-menu-wrap {
+  width: 100%;
+}
+
+.macro-add-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 35;
+  display: grid;
+  width: min(310px, calc(100vw - 32px));
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 16px 38px rgba(15, 23, 42, 0.18);
+}
+
+.macro-add-menu button,
+.macro-panel-vertical .button-row .macro-add-menu button {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 9px;
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  padding: 10px 11px;
+  border: 0;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 0;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  box-shadow: none;
+}
+
+.macro-add-menu button:last-child {
+  border-bottom: 0;
+}
+
+.macro-add-menu button:hover {
+  background: #f8fafc;
+}
+
+.macro-add-menu strong,
+.macro-add-menu small {
+  display: block;
+}
+
+.macro-add-menu strong {
+  font-size: 0.76rem;
+  line-height: 1.2;
+}
+
+.macro-add-menu small {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 0.68rem;
+  line-height: 1.35;
+}
+
 .macro-grid {
   display: grid;
   grid-template-columns: minmax(280px, 0.85fr) minmax(360px, 1.15fr);

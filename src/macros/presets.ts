@@ -52,6 +52,76 @@ export function createNozzleCleaningMacro(state: Pick<AppState, 'values' | 'tool
   };
 }
 
+export function createPrimeLineMacro(state: Pick<AppState, 'values' | 'toolhead'>): MacroDefinition {
+  const xMin = Number(state.values.x_min) || 0;
+  const xMax = Number(state.values.x_max) || Number(state.values.bed_x) || 250;
+  const yMin = Number(state.values.y_min) || 0;
+  const zMin = Number(state.values.z_min) || 0;
+  const zHop = Number(state.values.z_hop) || 15;
+  const startX = Math.min(xMax - 20, xMin + 10);
+  const endX = Math.max(startX + 20, Math.min(xMax - 10, startX + 95));
+  const y = yMin + 8;
+  const lineZ = Math.max(zMin, 0.28);
+  const lines = [
+    'SAVE_GCODE_STATE NAME=prime_line_state',
+    'G90',
+    'M83',
+    `G0 Z${formatPresetNumber(zHop)} F900`,
+    `G0 X${formatPresetNumber(startX)} Y${formatPresetNumber(y)} F9000`,
+    `G0 Z${formatPresetNumber(lineZ)} F900`,
+    `G1 X${formatPresetNumber(endX)} E12 F900`,
+    `G1 Y${formatPresetNumber(y + 0.7)} F9000`,
+    `G1 X${formatPresetNumber(startX)} E10 F900`,
+    'G1 E-0.8 F1200',
+    `G0 Z${formatPresetNumber(zHop)} F900`,
+    'RESTORE_GCODE_STATE NAME=prime_line_state'
+  ];
+
+  return {
+    id: createMacroId('prime'),
+    name: 'PRIME_LINE',
+    description: 'Example purge line near the front of the usable bed.',
+    gcode: lines.join('\n'),
+    paramsText: '',
+    simulationStartMode: 'current',
+    simulationStart: { ...state.toolhead }
+  };
+}
+
+export function createBedPerimeterCheckMacro(state: Pick<AppState, 'values' | 'toolhead'>): MacroDefinition {
+  const xMin = Number(state.values.x_min) || 0;
+  const xMax = Number(state.values.x_max) || Number(state.values.bed_x) || 250;
+  const yMin = Number(state.values.y_min) || 0;
+  const yMax = Number(state.values.y_max) || Number(state.values.bed_y) || 250;
+  const zHop = Number(state.values.z_hop) || 15;
+  const inset = Math.min(10, Math.max(0, (xMax - xMin) / 8, (yMax - yMin) / 8));
+  const left = xMin + inset;
+  const right = xMax - inset;
+  const front = yMin + inset;
+  const back = yMax - inset;
+  const lines = [
+    'SAVE_GCODE_STATE NAME=bed_perimeter_state',
+    'G90',
+    `G0 Z${formatPresetNumber(zHop)} F900`,
+    `G0 X${formatPresetNumber(left)} Y${formatPresetNumber(front)} F9000`,
+    `G1 X${formatPresetNumber(right)} F6000`,
+    `G1 Y${formatPresetNumber(back)} F6000`,
+    `G1 X${formatPresetNumber(left)} F6000`,
+    `G1 Y${formatPresetNumber(front)} F6000`,
+    'RESTORE_GCODE_STATE NAME=bed_perimeter_state'
+  ];
+
+  return {
+    id: createMacroId('perimeter'),
+    name: 'BED_PERIMETER_CHECK',
+    description: 'Example travel-only macro that traces the usable bed perimeter.',
+    gcode: lines.join('\n'),
+    paramsText: '',
+    simulationStartMode: 'current',
+    simulationStart: { ...state.toolhead }
+  };
+}
+
 export function createParkToolheadMacro(state: Pick<AppState, 'values' | 'toolhead'>): MacroDefinition {
   const x = Number(state.values.x_min) || 0;
   const y = Number(state.values.y_max) || Number(state.values.bed_y) || 250;
@@ -65,4 +135,8 @@ export function createParkToolheadMacro(state: Pick<AppState, 'values' | 'toolhe
     simulationStartMode: 'current',
     simulationStart: { ...state.toolhead }
   };
+}
+
+function formatPresetNumber(value: number): string {
+  return Number.isInteger(value) ? String(value) : value.toFixed(2).replace(/\.?0+$/, '');
 }
