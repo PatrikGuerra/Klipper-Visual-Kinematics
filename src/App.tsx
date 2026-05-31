@@ -17,6 +17,7 @@ import PrinterCfgModal from './components/PrinterCfgModal';
 import ShareModal from './components/ShareModal';
 import AboutModal from './components/AboutModal';
 import PanelDock, { type PanelDockItem } from './components/PanelDock';
+import GithubIcon from './components/icons/GithubIcon';
 import Button from './lib/components/ui/Button';
 
 export default function App() {
@@ -42,6 +43,10 @@ export default function App() {
             <div class="header-title-row">
               <h1>Klipper Visual Kinematics</h1>
               <Button variant="secondary" size="sm" onClick={() => updateMutable((draft) => (draft.ui.aboutModalOpen = true))}><Info size={14} />About</Button>
+              <a class="btn btn-outline btn-xs" href="https://github.com/PatrikGuerra/Klipper-Visual-Kinematics" target="_blank" rel="noreferrer" aria-label="Open GitHub repository">
+                <GithubIcon size={14} />
+                GitHub
+              </a>
               <Button variant="success" size="sm" onClick={() => updateMutable((draft) => (draft.ui.shareModalOpen = true))}><Link size={14} />Share</Button>
             </div>
             <p>Visualize motion models, validate reach, and generate positioning config sections.</p>
